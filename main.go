@@ -20,7 +20,10 @@ func main() {
 	if err != nil {
 		log.Fatal("Could not read file " + fileName)
 	}
-	watch("./testDir")
+	cancelWatcherFunc := InitWatch("./testDir")
+
+	<-make(chan struct{})
+	cancelWatcherFunc()
 }
 
 func createMetadata(fileName string) []byte {

@@ -1,49 +1,63 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
 	"github.com/fsnotify/fsnotify"
 )
 
-func watch(directoryName string) {
+func watch(ctx context.Context, watcher *fsnotify.Watcher) {
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
+			}
+			log.Println("event:", event)
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			log.Println("error:", err)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func WatchDirectory(ctx context.Context, directoryName string) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer watcher.Close()
 
-	go func() {
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-				log.Println("event:", event)
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Println("modified file:", event.Name)
-				}
-				if event.Op&fsnotify.Create == fsnotify.Create {
-					log.Println("created file:", event.Name)
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				log.Println("error:", err)
-			}
-		}
-	}()
+	go watch(ctx, watcher)
+
 	if _, err := os.Stat(directoryName); os.IsNotExist(err) {
 		os.Mkdir(directoryName, 0755)
 	}
 	err = watcher.Add(directoryName)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	log.Printf("Watching folder " + directoryName)
-	<-make(chan struct{}) // Block forever
+	log.Printf("Watching folder %s has started\n", directoryName)
+	<-ctx.Done()
+	log.Printf("Watching folder %s has stopped\n", directoryName)
+	return ctx.Err()
+}
+
+func InitWatch(directoryName string) context.CancelFunc {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		if err := WatchDirectory(ctx, directoryName); err != nil {
+			log.Printf("Watching folder %s has stopped with error %s\n", directoryName, err)
+		}
+	}()
+
+	return cancel
 }
