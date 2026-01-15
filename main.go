@@ -1,50 +1,17 @@
 package main
 
 import (
-	"encoding/json"
-	"log"
-	"os"
-	"strings"
+	"github.com/ikugo-dev/DeFence/gui"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		running := os.Args[0]
-		if strings.Contains(running, "/tmp/") {
-			running = "go run *.go"
-		}
-		log.Fatalf("Usage: %s <input file>", running)
-	}
-	fileName := os.Args[1]
-	_, err := os.ReadFile(fileName)
-	if err != nil {
-		log.Fatal("Could not read file " + fileName)
-	}
-	cancelWatcherFunc := InitWatch("./testDir")
-
-	<-make(chan struct{})
-	cancelWatcherFunc()
+	gui.Start()
 }
 
-func createMetadata(fileName string) []byte {
-	fileInfo, err := os.Stat(fileName)
-	if err != nil {
-		log.Fatal("Could not read file " + fileName)
-	}
-	jsonContent, err := json.Marshal(map[string]any{
-		"fileName":            fileName,
-		"fileSize":            fileInfo.Size(),
-		"creationDateTime":    fileInfo.ModTime(),
-		"encryptionAlgorithm": "",
-		"hashingAlgorithm":    "",
-	})
-	if err != nil {
-		log.Fatal("Could not encode metadata for file " + fileName)
-	}
-	return jsonContent
-}
-
-// TODO: Implement these functions
-func RailfenceCipher() {}
-func XXTEA()           {}
-func CBC()             {}
+// TODO: Implement encryption/decryption functions
+func EncryptRailfence(data []byte, key int) ([]byte, error) { return data, nil }
+func DecryptRailfence(data []byte, key int) ([]byte, error) { return data, nil }
+func EncryptXXTEA(data []byte, key []byte) ([]byte, error)  { return data, nil }
+func DecryptXXTEA(data []byte, key []byte) ([]byte, error)  { return data, nil }
+func EncryptCBC(data []byte, key []byte) ([]byte, error)    { return data, nil }
+func DecryptCBC(data []byte, key []byte) ([]byte, error)    { return data, nil }
