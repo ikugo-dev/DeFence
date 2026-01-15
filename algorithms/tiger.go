@@ -1,4 +1,4 @@
-package main
+package algorithms
 
 // func TigerHash()       {
 // // Napomena: konkatenacija je obeležena rečju append

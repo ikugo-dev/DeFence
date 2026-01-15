@@ -90,7 +90,7 @@ func handleSendFile(window fyne.Window, state *AppState, selectedFile *string, i
 	progress.Show()
 
 	go func() {
-		err := tcpsocket.SendFile(*selectedFile, address, algorithm)
+		err := tcpsocket.SendFile(*selectedFile, address, algorithm, "tigerHash")
 		progress.Hide()
 
 		if err != nil {
