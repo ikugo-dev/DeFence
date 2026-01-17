@@ -15,6 +15,12 @@ func MX(y, z, sum, p, e uint32, key []uint32) uint32 {
 }
 
 func EncryptXXTEA(data []byte, key []byte) []byte {
+	if len(data)%4 != 0 {
+		log.Fatal("data length must be multiple of 4 bytes")
+	}
+	if len(data)/4 < 2 {
+		log.Fatal("data must contain at least two uint32 words")
+	}
 	if len(data) < MinDataSize {
 		log.Fatal("invalid data size")
 	}

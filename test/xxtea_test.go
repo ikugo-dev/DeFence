@@ -19,12 +19,12 @@ func TestEncryptDecryptXXTEA(t *testing.T) {
 			key:   []byte("1234567890abcdef"),
 		},
 		{
-			input: "this is exactly 32 bytes long!!",
+			input: "this is exactly 32 bytes long!!!",
 			key:   []byte("examplekey123456"),
 		},
 		{
-			input: "four blocks of data....four blocks of data....",
-			key:   []byte("deadbeefdeadbeef"),
+			input: "abcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnop",
+			key:   []byte("abcdefghijklmnop"),
 		},
 	}
 
