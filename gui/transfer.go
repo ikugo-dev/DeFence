@@ -90,15 +90,14 @@ func handleSendFile(window fyne.Window, state *AppState, selectedFile *string, i
 	progress.Show()
 
 	go func() {
-		err := tcpsocket.SendFile(*selectedFile, address, algorithm, "tigerHash")
+		err := tcpsocket.SendFile(*selectedFile, address, algorithm, []byte("Tiger"))
 		progress.Hide()
 
 		if err != nil {
-			logger.Log(fmt.Sprintf("Failed to send file: %v", err))
+			logger.Log("Failed to send file: %v", err)
 			dialog.ShowError(fmt.Errorf("failed to send file: %v", err), window)
 		} else {
-			logger.Log(fmt.Sprintf("Sent file %s to %s (Algorithm: %s)",
-				filepath.Base(*selectedFile), address, algorithm))
+			logger.Log("Sent file %s to %s (Algorithm: %s)", filepath.Base(*selectedFile), address, algorithm)
 			dialog.ShowInformation("Success", "File sent successfully!", window)
 		}
 	}()
@@ -163,7 +162,7 @@ func createReceiveButtons(window fyne.Window, state *AppState, portEntry *widget
 			portEntry.Text,
 			*saveDir,
 			func(status string) {
-				logger.Log(status)
+				logger.Log("%s", status)
 				statusLabel.SetText("Status: " + status)
 			},
 		)
@@ -180,7 +179,7 @@ func createReceiveButtons(window fyne.Window, state *AppState, portEntry *widget
 
 	stopBtn.OnTapped = func() {
 		tcpsocket.StopListening(func(status string) {
-			logger.Log(status)
+			logger.Log("%s", status)
 			statusLabel.SetText("Status: " + status)
 		})
 

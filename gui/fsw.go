@@ -97,7 +97,7 @@ func handleStartWatching(window fyne.Window, state *AppState, dirEntry *widget.E
 	statusLabel.SetText("Status: Watching " + dir)
 	startBtn.Disable()
 	stopBtn.Enable()
-	logger.Log("Started watching: " + dir)
+	logger.Log("%s", "Started watching: "+dir)
 }
 
 func handleStopWatching(state *AppState, statusLabel *widget.Label, startBtn, stopBtn *widget.Button) {

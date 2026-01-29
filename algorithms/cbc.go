@@ -2,15 +2,15 @@ package algorithms
 
 import (
 	"bytes"
+	"crypto/rand"
 	"log"
 )
 
 const BlockSize = 16
 
-func EncryptCBC(data []byte, key []byte, iv []byte) []byte {
-	if len(iv) != BlockSize {
-		log.Fatal("invalid IV size")
-	}
+func EncryptCBC(data []byte, key []byte) []byte {
+	iv := make([]byte, BlockSize)
+	rand.Read(iv)
 	if len(key) != KeySize {
 		log.Fatal("invalid key size")
 	}

@@ -3,7 +3,6 @@ package gui
 import (
 	"fmt"
 	"path/filepath"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -11,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
+	"github.com/ikugo-dev/DeFence/algorithms"
 	"github.com/ikugo-dev/DeFence/logger"
 )
 
@@ -21,6 +21,10 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 	algorithmSelect := widget.NewSelect([]string{"Railfence Cipher", "XXTEA", "CBC"}, nil)
 	algorithmSelect.SetSelected("Railfence Cipher")
 
+	keyEntry := widget.NewEntry()
+	keyEntry.SetPlaceHolder("Enter encryption key")
+	keyEntry.Password = true
+
 	operationRadio := widget.NewRadioGroup([]string{"Encrypt", "Decrypt"}, nil)
 	operationRadio.SetSelected("Encrypt")
 
@@ -29,9 +33,10 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 
 	fileSection := createFileSelectionSection(window, &selectedFile, fileLabel)
 	algorithmSection := createAlgorithmSection(algorithmSelect)
+	keySection := createKeySection(keyEntry)
 	operationSection := createOperationSection(operationRadio)
 	outputSection := createOutputSection(window, &outputFile, outputLabel)
-	processBtn := createProcessButton(window, state, &selectedFile, &outputFile, algorithmSelect, operationRadio)
+	processBtn := createProcessButton(window, state, &selectedFile, &outputFile, algorithmSelect, keyEntry, operationRadio)
 
 	return container.NewVBox(
 		widget.NewLabel("Single File Encryption/Decryption:"),
@@ -39,6 +44,8 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 		fileSection,
 		widget.NewSeparator(),
 		algorithmSection,
+		widget.NewSeparator(),
+		keySection,
 		widget.NewSeparator(),
 		operationSection,
 		widget.NewSeparator(),
@@ -63,6 +70,13 @@ func createAlgorithmSection(algorithmSelect *widget.Select) *fyne.Container {
 	)
 }
 
+func createKeySection(keyEntry *widget.Entry) *fyne.Container {
+	return container.NewVBox(
+		widget.NewLabel("Encryption / Decryption Key:"),
+		keyEntry,
+	)
+}
+
 func createOperationSection(operationRadio *widget.RadioGroup) *fyne.Container {
 	return container.NewVBox(
 		widget.NewLabel("Select Operation:"),
@@ -77,48 +91,27 @@ func createOutputSection(window fyne.Window, outputFile *string, outputLabel *wi
 	return container.NewVBox(selectBtn, outputLabel)
 }
 
-func createProcessButton(window fyne.Window, state *AppState, selectedFile, outputFile *string, algorithmSelect *widget.Select, operationRadio *widget.RadioGroup) *widget.Button {
+func createProcessButton(
+	window fyne.Window,
+	state *AppState,
+	selectedFile, outputFile *string,
+	algorithmSelect *widget.Select,
+	keyEntry *widget.Entry,
+	operationRadio *widget.RadioGroup,
+) *widget.Button {
 	return widget.NewButton("Process File", func() {
-		processFile(window, state, selectedFile, outputFile, algorithmSelect, operationRadio)
+		processFile(window, state, selectedFile, outputFile, algorithmSelect, keyEntry, operationRadio)
 	})
 }
 
-func processFile(window fyne.Window, state *AppState, selectedFile, outputFile *string, algorithmSelect *widget.Select, operationRadio *widget.RadioGroup) {
-	if *selectedFile == "" {
-		dialog.ShowError(fmt.Errorf("please select a file first"), window)
-		return
-	}
-
-	operation := operationRadio.Selected
-	algorithm := algorithmSelect.Selected
-
-	output := determineOutputPath(*selectedFile, *outputFile, operation)
-
-	progress := dialog.NewProgressInfinite("Processing",
-		fmt.Sprintf("%sing file with %s...", operation, algorithm), window)
-	progress.Show()
-
-	go func() {
-		time.Sleep(1 * time.Second) // Simulate processing
-		fyne.Do(func() {
-			progress.Hide()
-		})
-
-		// TODO: Call actual encryption/decryption functions here
-		logger.Log(fmt.Sprintf("%sed file: %s → %s (Algorithm: %s)",
-			operation, filepath.Base(*selectedFile), filepath.Base(output), algorithm))
-
-		dialog.ShowInformation("Success",
-			fmt.Sprintf("File %sed successfully!\nOutput: %s", operation, output), window)
-	}()
-}
-
 func determineOutputPath(selectedFile, outputFile, operation string) string {
+	outputName := selectedFile
 	if outputFile != "" {
-		return outputFile
+		outputName = outputFile
 	}
+
 	if operation == "Encrypt" {
-		return selectedFile + ".enc"
+		return outputName + ".enc"
 	}
 	return selectedFile + ".dec"
 }
@@ -159,4 +152,42 @@ func showSaveFilePicker(window fyne.Window, outputFile *string, outputLabel *wid
 		fd.SetLocation(listableURI)
 	}
 	fd.Show()
+}
+
+func processFile(window fyne.Window, state *AppState, selectedFile, outputFile *string, algorithmSelect *widget.Select, keyEntry *widget.Entry, operationRadio *widget.RadioGroup) {
+	if *selectedFile == "" {
+		dialog.ShowError(fmt.Errorf("please select a file first"), window)
+		return
+	}
+	if keyEntry.Text == "" {
+		dialog.ShowError(fmt.Errorf("please enter a key"), window)
+		return
+	}
+
+	operation := operationRadio.Selected
+	algorithm := algorithmSelect.Selected
+
+	output := determineOutputPath(*selectedFile, *outputFile, operation)
+
+	progress := dialog.NewProgressInfinite("Processing",
+		fmt.Sprintf("%sing file with %s...", operation, algorithm), window)
+	progress.Show()
+
+	go func() {
+		fyne.Do(func() {
+			progress.Hide()
+		})
+
+		key := []byte(keyEntry.Text)
+		if operation == "Encrypt" {
+			algorithms.EncryptFile(*selectedFile, key, algorithm, "Tiger")
+		} else if operation == "Decrypt" {
+			algorithms.DecryptFile(*selectedFile, key)
+		}
+
+		logger.Log("%sed file: %s → %s (Algorithm: %s)", operation, filepath.Base(*selectedFile), filepath.Base(output), algorithm)
+
+		dialog.ShowInformation("Success",
+			fmt.Sprintf("File %sed successfully!\nOutput: %s", operation, output), window)
+	}()
 }

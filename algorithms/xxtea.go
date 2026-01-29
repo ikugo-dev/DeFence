@@ -1,10 +1,6 @@
 package algorithms
 
-import (
-	"bytes"
-	"encoding/binary"
-	"log"
-)
+import "log"
 
 const DELTA = 0x9e3779b9
 const MinDataSize = 16
@@ -27,9 +23,16 @@ func EncryptXXTEA(data []byte, key []byte) []byte {
 	if len(key) != KeySize {
 		log.Fatal("invalid key size")
 	}
-	v := bytesToUint32s(data)
+
+	v, ok := bytesToUint32s(data)
+	if !ok {
+		log.Fatal("invalid key")
+	}
 	n := len(v)
-	k := bytesToUint32s(key)
+	k, ok := bytesToUint32s(key)
+	if !ok {
+		log.Fatal("invalid key")
+	}
 
 	var y, z, sum uint32
 	rounds := uint32(6 + 52/n)
@@ -49,7 +52,11 @@ func EncryptXXTEA(data []byte, key []byte) []byte {
 		z = v[n-1]
 		rounds--
 	}
-	return uint32ToBytes(v)
+	result, ok := uint32ToBytes(v)
+	if !ok {
+		log.Fatal("cannot convert encripted result back to bytes")
+	}
+	return result
 }
 
 func DecryptXXTEA(data []byte, key []byte) []byte {
@@ -59,9 +66,16 @@ func DecryptXXTEA(data []byte, key []byte) []byte {
 	if len(key) != KeySize {
 		log.Fatal("invalid key size")
 	}
-	v := bytesToUint32s(data)
+
+	v, ok := bytesToUint32s(data)
+	if !ok {
+		log.Fatal("invalid key")
+	}
 	n := len(v)
-	k := bytesToUint32s(key)
+	k, ok := bytesToUint32s(key)
+	if !ok {
+		log.Fatal("invalid key")
+	}
 
 	var y, z, sum uint32
 	rounds := uint32(6 + 52/n)
@@ -80,26 +94,9 @@ func DecryptXXTEA(data []byte, key []byte) []byte {
 		sum -= DELTA
 		rounds--
 	}
-	return uint32ToBytes(v)
-}
-
-func bytesToUint32s(b []byte) []uint32 {
-	if len(b)%4 != 0 {
-		return nil // TODO: error handling
+	result, ok := uint32ToBytes(v)
+	if !ok {
+		log.Fatal("cannot convert encripted result back to bytes")
 	}
-
-	u := make([]uint32, len(b)/4)
-	for i := range u {
-		u[i] = binary.LittleEndian.Uint32(b[i*4 : (i+1)*4])
-	}
-	return u
-}
-
-func uint32ToBytes(u []uint32) []byte {
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.LittleEndian, u)
-	if err != nil {
-		return nil //TODO: error handling
-	}
-	return buf.Bytes()
+	return result
 }

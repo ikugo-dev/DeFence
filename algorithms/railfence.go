@@ -1,6 +1,15 @@
 package algorithms
 
-func EncryptRailfence(text []byte, key int) []byte {
+import (
+	"log"
+	"strconv"
+)
+
+func EncryptRailfence(text []byte, byteKey []byte) []byte {
+	key, err := strconv.Atoi(string(byteKey))
+	if err != nil || key <= 1 {
+		log.Fatal("invalid key")
+	}
 	// create the matrix to cipher plain text
 	// key = rows , length(text) = columns
 	rail := make([][]byte, key)
@@ -51,7 +60,12 @@ func EncryptRailfence(text []byte, key int) []byte {
 	return result
 }
 
-func DecryptRailfence(cipher []byte, key int) []byte {
+func DecryptRailfence(cipher []byte, byteKey []byte) []byte {
+	key, ok := bytesToint(byteKey)
+	if !ok {
+		log.Fatal("invalid key size")
+	}
+
 	rail := make([][]byte, key)
 	for i := range rail {
 		rail[i] = make([]byte, len(cipher))

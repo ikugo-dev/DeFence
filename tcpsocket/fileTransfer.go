@@ -3,8 +3,9 @@ package tcpsocket
 import (
 	"fmt"
 	"net"
-	"os"
 	"time"
+
+	"github.com/ikugo-dev/DeFence/algorithms"
 )
 
 type FileMetadata struct {
@@ -17,14 +18,8 @@ type FileMetadata struct {
 
 var activeListener net.Listener
 
-func SendFile(filePath, address, algorithm, hash string) error {
-	fileData, err := os.ReadFile(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to read file: %v", err)
-	}
-
-	metadata := createMetadata(filePath, algorithm, hash)
-	encryptedData := encryptFileData(fileData, algorithm, hash)
+func SendFile(fileName, address, algorithm string, key []byte) error {
+	encryptedData := algorithms.EncryptFile(fileName, key, algorithm, "Tiger")
 
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
@@ -32,7 +27,7 @@ func SendFile(filePath, address, algorithm, hash string) error {
 	}
 	defer conn.Close()
 
-	if err := sendData(conn, metadata, encryptedData); err != nil {
+	if err := sendData(conn, encryptedData); err != nil {
 		return err
 	}
 
