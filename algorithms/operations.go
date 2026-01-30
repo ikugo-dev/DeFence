@@ -7,28 +7,28 @@ import (
 	"github.com/ikugo-dev/DeFence/logger"
 )
 
-func EncryptFile(fileName string, key []byte, algorithm, hash string) []byte {
+func EncryptFile(fileName string, key []byte, algorithm string) []byte {
 	metadata := createMetadata(fileName, algorithm, "TigerHash")
 	data, err := os.ReadFile(fileName)
 	if err != nil {
 		logger.Log("Failed to read file: %s", err)
 		return nil
 	}
-	encryptedData := EncryptFileData(data, key, algorithm, hash)
+	encryptedData := EncryptFileData(data, key, algorithm)
 	if encryptedData == nil {
 		return nil
 	}
 	return append(metadata, encryptedData...)
 }
 
-func EncryptFileData(data []byte, key []byte, algorithm, hash string) []byte {
+func EncryptFileData(data []byte, key []byte, algorithm string) []byte {
 	switch algorithm {
-	case "Railfence Cipher":
-		return EncryptRailfence(data, key)
+	case "Railfence":
+		return encryptRailfence(data, key)
 	case "XXTEA":
-		return EncryptXXTEA(data, key)
+		return encryptXXTEA(data, key)
 	case "CBC":
-		return EncryptCBC(data, key)
+		return encryptCBC(data, key)
 	}
 	return nil //ERROR
 }
@@ -54,11 +54,11 @@ func DecryptFile(fileName string, key []byte) []byte {
 func DecryptFileData(data []byte, key []byte, algorithm string) []byte {
 	switch algorithm {
 	case "Railfence Cipher":
-		return DecryptRailfence(data, key)
+		return decryptRailfence(data, key)
 	case "XXTEA":
-		return DecryptXXTEA(data, key)
+		return decryptXXTEA(data, key)
 	case "CBC":
-		return DecryptCBC(data, key)
+		return decryptCBC(data, key)
 	}
 	return nil //ERROR
 }

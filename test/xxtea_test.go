@@ -29,8 +29,8 @@ func TestEncryptDecryptXXTEA(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		encrypted := a.EncryptXXTEA([]byte(tt.input), tt.key)
-		decrypted := a.DecryptXXTEA(encrypted, tt.key)
+		encrypted := a.EncryptFileData([]byte(tt.input), tt.key, "XXTEA")
+		decrypted := a.DecryptFileData(encrypted, tt.key, "XXTEA")
 
 		if !bytes.Equal(decrypted, []byte(tt.input)) {
 			t.Errorf(

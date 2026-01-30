@@ -4,7 +4,7 @@ import (
 	"log"
 )
 
-func EncryptRailfence(text []byte, byteKey []byte) []byte {
+func encryptRailfence(text []byte, byteKey []byte) []byte {
 	key, err := bytesToint(byteKey)
 	if err != nil || key <= 1 {
 		log.Fatal("invalid key")
@@ -62,7 +62,7 @@ func EncryptRailfence(text []byte, byteKey []byte) []byte {
 	return result
 }
 
-func DecryptRailfence(cipher []byte, byteKey []byte) []byte {
+func decryptRailfence(cipher []byte, byteKey []byte) []byte {
 	key, err := bytesToint(byteKey)
 	if err != nil {
 		log.Fatal("invalid key size")

@@ -29,8 +29,8 @@ func TestEncryptDecryptCBC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		encrypted := a.EncryptCBC([]byte(tt.input), tt.key)
-		decrypted := a.DecryptCBC(encrypted, tt.key)
+		encrypted := a.EncryptFileData([]byte(tt.input), tt.key, "CBC")
+		decrypted := a.DecryptFileData(encrypted, tt.key, "CBC")
 
 		if !bytes.Equal(decrypted, []byte(tt.input)) {
 			t.Errorf(

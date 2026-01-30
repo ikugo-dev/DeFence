@@ -5,6 +5,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/dialog"
 )
 
 var logChan chan string = make(chan string, 100)
@@ -44,4 +47,9 @@ func Clear() {
 	mu.Lock()
 	logs = logs[:0]
 	mu.Unlock()
+}
+
+func LogWithDialog(window fyne.Window, format string, args ...any) {
+	dialog.ShowError(fmt.Errorf(format, args...), window)
+	Log(format, args...)
 }

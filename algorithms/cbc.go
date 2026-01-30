@@ -8,7 +8,7 @@ import (
 
 const BlockSize = 16
 
-func EncryptCBC(data []byte, key []byte) []byte {
+func encryptCBC(data []byte, key []byte) []byte {
 	iv := make([]byte, BlockSize)
 	rand.Read(iv)
 	if len(key) != KeySize {
@@ -25,14 +25,15 @@ func EncryptCBC(data []byte, key []byte) []byte {
 	for i := 0; i < len(data); i += BlockSize {
 		block := data[i : i+BlockSize]
 		xored := xorBlocks(block, prev)
-		enc := EncryptXXTEA(xored, key)
+		enc := encryptXXTEA(xored, key)
 		out = append(out, enc...)
 		prev = enc
 	}
 
 	return out
 }
-func DecryptCBC(data []byte, key []byte) []byte {
+
+func decryptCBC(data []byte, key []byte) []byte {
 	if len(data) < BlockSize*2 {
 		log.Fatal("ciphertext too short")
 	}
@@ -48,7 +49,7 @@ func DecryptCBC(data []byte, key []byte) []byte {
 
 	for i := 0; i < len(data); i += BlockSize {
 		block := data[i : i+BlockSize]
-		dec := DecryptXXTEA(block, key)
+		dec := decryptXXTEA(block, key)
 		plain := xorBlocks(dec, prev)
 		out = append(out, plain...)
 		prev = block

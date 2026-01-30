@@ -19,6 +19,10 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 	var selectedFile string
 	fileLabel := widget.NewLabel("No file selected")
 
+	selectFileBtn := widget.NewButton("Select File to Send", func() {
+		showFilePicker(window, &selectedFile, fileLabel)
+	})
+
 	ipEntry := widget.NewEntry()
 	ipEntry.SetPlaceHolder("Recipient IP (e.g., 192.168.1.100)")
 
@@ -29,78 +33,59 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 	algorithmSelect := widget.NewSelect([]string{"Railfence Cipher", "XXTEA", "CBC"}, nil)
 	algorithmSelect.SetSelected("XXTEA")
 
-	fileSection := createSendFileSelection(window, &selectedFile, fileLabel)
-	recipientSection := createRecipientSection(ipEntry, portEntry)
-	algorithmSection := createAlgorithmSection(algorithmSelect)
-	sendBtn := createSendButton(window, state, &selectedFile, ipEntry, portEntry, algorithmSelect)
+	sendBtn := widget.NewButton("Send File", func() {
+		if selectedFile == "" {
+			dialog.ShowError(fmt.Errorf("please select a file to send"), window)
+			return
+		}
+		if ipEntry.Text == "" {
+			dialog.ShowError(fmt.Errorf("please enter recipient IP address"), window)
+			return
+		}
+		if portEntry.Text == "" {
+			dialog.ShowError(fmt.Errorf("please enter port number"), window)
+			return
+		}
+
+		address := ipEntry.Text + ":" + portEntry.Text
+		algorithm := algorithmSelect.Selected
+
+		progress := dialog.NewProgressInfinite("Sending", "Encrypting and sending file...", window)
+		progress.Show()
+
+		go func() {
+			err := tcpsocket.SendFile(selectedFile, address, algorithm, []byte("Tiger"))
+			
+			fyne.Do(func() {
+				progress.Hide()
+				if err != nil {
+					logger.Log("Failed to send file: %v", err)
+					dialog.ShowError(fmt.Errorf("failed to send file: %v", err), window)
+				} else {
+					logger.Log("Sent file %s to %s (Algorithm: %s)", 
+						filepath.Base(selectedFile), address, algorithm)
+					dialog.ShowInformation("Success", "File sent successfully!", window)
+				}
+			})
+		}()
+	})
 
 	return container.NewVBox(
 		widget.NewLabel("Send Encrypted File:"),
 		widget.NewSeparator(),
-		fileSection,
+		selectFileBtn,
+		fileLabel,
 		widget.NewSeparator(),
-		recipientSection,
+		widget.NewLabel("Recipient Details:"),
+		ipEntry,
+		portEntry,
 		widget.NewSeparator(),
-		algorithmSection,
+		widget.NewLabel("Select Algorithm:"),
+		algorithmSelect,
 		widget.NewSeparator(),
 		layout.NewSpacer(),
 		sendBtn,
 	)
-}
-
-func createSendFileSelection(window fyne.Window, selectedFile *string, fileLabel *widget.Label) *fyne.Container {
-	selectBtn := widget.NewButton("Select File to Send", func() {
-		showFilePicker(window, selectedFile, fileLabel)
-	})
-	return container.NewVBox(selectBtn, fileLabel)
-}
-
-func createRecipientSection(ipEntry, portEntry *widget.Entry) *fyne.Container {
-	return container.NewVBox(
-		widget.NewLabel("Recipient Details:"),
-		ipEntry,
-		portEntry,
-	)
-}
-
-func createSendButton(window fyne.Window, state *AppState, selectedFile *string, ipEntry, portEntry *widget.Entry, algorithmSelect *widget.Select) *widget.Button {
-	return widget.NewButton("Send File", func() {
-		handleSendFile(window, state, selectedFile, ipEntry, portEntry, algorithmSelect)
-	})
-}
-
-func handleSendFile(window fyne.Window, state *AppState, selectedFile *string, ipEntry, portEntry *widget.Entry, algorithmSelect *widget.Select) {
-	if *selectedFile == "" {
-		dialog.ShowError(fmt.Errorf("please select a file to send"), window)
-		return
-	}
-	if ipEntry.Text == "" {
-		dialog.ShowError(fmt.Errorf("please enter recipient IP address"), window)
-		return
-	}
-	if portEntry.Text == "" {
-		dialog.ShowError(fmt.Errorf("please enter port number"), window)
-		return
-	}
-
-	address := ipEntry.Text + ":" + portEntry.Text
-	algorithm := algorithmSelect.Selected
-
-	progress := dialog.NewProgressInfinite("Sending", "Encrypting and sending file...", window)
-	progress.Show()
-
-	go func() {
-		err := tcpsocket.SendFile(*selectedFile, address, algorithm, []byte("Tiger"))
-		progress.Hide()
-
-		if err != nil {
-			logger.Log("Failed to send file: %v", err)
-			dialog.ShowError(fmt.Errorf("failed to send file: %v", err), window)
-		} else {
-			logger.Log("Sent file %s to %s (Algorithm: %s)", filepath.Base(*selectedFile), address, algorithm)
-			dialog.ShowInformation("Success", "File sent successfully!", window)
-		}
-	}()
 }
 
 // Receive File Section
@@ -109,50 +94,28 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 	portEntry.SetPlaceHolder("Port to listen on (e.g., 8080)")
 	portEntry.SetText("8080")
 
-	saveDirLabel := widget.NewLabel("Save to: ./received_files/")
 	saveDir := "./received_files/"
+	saveDirLabel := widget.NewLabel("Save to: " + saveDir)
+
+	selectDirBtn := widget.NewButton("Choose Save Directory", func() {
+		currentDir := getCurrentDirectory()
+		listableURI, _ := storage.ListerForURI(storage.NewFileURI(currentDir))
+
+		fd := dialog.NewFolderOpen(func(dir fyne.ListableURI, err error) {
+			if err != nil || dir == nil {
+				return
+			}
+			saveDir = dir.Path()
+			saveDirLabel.SetText("Save to: " + saveDir)
+		}, window)
+
+		if listableURI != nil {
+			fd.SetLocation(listableURI)
+		}
+		fd.Show()
+	})
 
 	statusLabel := widget.NewLabel("Status: Not listening")
-	startBtn, stopBtn := createReceiveButtons(window, state, portEntry, &saveDir, saveDirLabel, statusLabel)
-
-	portSection := createPortSection(portEntry)
-	saveSection := createSaveDirectorySection(window, &saveDir, saveDirLabel)
-	controlSection := createReceiveControlSection(statusLabel, startBtn, stopBtn)
-
-	return container.NewVBox(
-		widget.NewLabel("Receive Encrypted File:"),
-		widget.NewSeparator(),
-		portSection,
-		widget.NewSeparator(),
-		saveSection,
-		widget.NewSeparator(),
-		controlSection,
-		layout.NewSpacer(),
-	)
-}
-
-func createPortSection(portEntry *widget.Entry) *fyne.Container {
-	return container.NewVBox(
-		widget.NewLabel("Listening Port:"),
-		portEntry,
-	)
-}
-
-func createSaveDirectorySection(window fyne.Window, saveDir *string, saveDirLabel *widget.Label) *fyne.Container {
-	selectBtn := widget.NewButton("Choose Save Directory", func() {
-		showDirectoryPickerForSave(window, saveDir, saveDirLabel)
-	})
-	return container.NewVBox(selectBtn, saveDirLabel)
-}
-
-func createReceiveControlSection(statusLabel *widget.Label, startBtn, stopBtn *widget.Button) *fyne.Container {
-	return container.NewVBox(
-		statusLabel,
-		container.NewHBox(startBtn, stopBtn),
-	)
-}
-
-func createReceiveButtons(window fyne.Window, state *AppState, portEntry *widget.Entry, saveDir *string, saveDirLabel, statusLabel *widget.Label) (*widget.Button, *widget.Button) {
 	startBtn := widget.NewButton("Start Listening", nil)
 	stopBtn := widget.NewButton("Stop Listening", nil)
 	stopBtn.Disable()
@@ -160,7 +123,7 @@ func createReceiveButtons(window fyne.Window, state *AppState, portEntry *widget
 	startBtn.OnTapped = func() {
 		err := tcpsocket.StartListening(
 			portEntry.Text,
-			*saveDir,
+			saveDir,
 			func(status string) {
 				logger.Log("%s", status)
 				statusLabel.SetText("Status: " + status)
@@ -188,23 +151,17 @@ func createReceiveButtons(window fyne.Window, state *AppState, portEntry *widget
 		portEntry.Enable()
 	}
 
-	return startBtn, stopBtn
-}
-
-func showDirectoryPickerForSave(window fyne.Window, saveDir *string, saveDirLabel *widget.Label) {
-	currentDir := getCurrentDirectory()
-	listableURI, _ := storage.ListerForURI(storage.NewFileURI(currentDir))
-
-	fd := dialog.NewFolderOpen(func(dir fyne.ListableURI, err error) {
-		if err != nil || dir == nil {
-			return
-		}
-		*saveDir = dir.Path()
-		saveDirLabel.SetText("Save to: " + *saveDir)
-	}, window)
-
-	if listableURI != nil {
-		fd.SetLocation(listableURI)
-	}
-	fd.Show()
+	return container.NewVBox(
+		widget.NewLabel("Receive Encrypted File:"),
+		widget.NewSeparator(),
+		widget.NewLabel("Listening Port:"),
+		portEntry,
+		widget.NewSeparator(),
+		selectDirBtn,
+		saveDirLabel,
+		widget.NewSeparator(),
+		statusLabel,
+		container.NewHBox(startBtn, stopBtn),
+		layout.NewSpacer(),
+	)
 }

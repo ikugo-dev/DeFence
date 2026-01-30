@@ -29,99 +29,65 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 	dirEntry.Text = getCurrentDirectory()
 	dirLabel := widget.NewLabel("No directory selected")
 
-	statusLabel := widget.NewLabel("Status: Stopped")
-	startBtn, stopBtn := createWatcherButtons(window, state, dirEntry, statusLabel)
-
-	dirSection := createDirectorySection(window, dirEntry, dirLabel)
-	controlSection := createControlSection(statusLabel, startBtn, stopBtn)
-
-	return container.NewVBox(
-		dirSection,
-		widget.NewSeparator(),
-		controlSection,
-		layout.NewSpacer(),
-	)
-}
-
-func createDirectorySection(window fyne.Window, dirEntry *widget.Entry, dirLabel *widget.Label) *fyne.Container {
 	selectBtn := widget.NewButton("Select Directory", func() {
 		showDirectoryPicker(window, dirEntry, dirLabel)
 	})
 
-	return container.NewVBox(
-		widget.NewLabel("Directory Selection:"),
-		container.NewBorder(nil, nil, nil, selectBtn, dirEntry),
-		dirLabel,
-	)
-}
-
-func createControlSection(statusLabel *widget.Label, startBtn, stopBtn *widget.Button) *fyne.Container {
-	return container.NewVBox(
-		statusLabel,
-		container.NewHBox(startBtn, stopBtn),
-	)
-}
-
-func createWatcherButtons(window fyne.Window, state *AppState, dirEntry *widget.Entry, statusLabel *widget.Label) (*widget.Button, *widget.Button) {
+	statusLabel := widget.NewLabel("Status: Stopped")
 	startBtn := widget.NewButton("Start Watching", nil)
 	stopBtn := widget.NewButton("Stop Watching", nil)
 	stopBtn.Disable()
 
 	startBtn.OnTapped = func() {
-		handleStartWatching(window, state, dirEntry, statusLabel, startBtn, stopBtn)
+		if dirEntry.Text == "" {
+			dialog.ShowError(fmt.Errorf("please select a directory first"), window)
+			return
+		}
+		if state.isWatching {
+			dialog.ShowInformation("Already Watching", "Directory watcher is already running", window)
+			return
+		}
+
+		state.watchDir = dirEntry.Text
+		state.watcherCancel = fsw.InitWatch(dirEntry.Text)
+		state.isWatching = true
+
+		statusLabel.SetText("Status: Watching " + dirEntry.Text)
+		startBtn.Disable()
+		stopBtn.Enable()
+		logger.Log("Started watching: " + dirEntry.Text)
 	}
 
 	stopBtn.OnTapped = func() {
-		handleStopWatching(state, statusLabel, startBtn, stopBtn)
+		if state.isWatching {
+			if state.watcherCancel != nil {
+				state.watcherCancel()
+				state.watcherCancel = nil
+			}
+			state.isWatching = false
+			statusLabel.SetText("Status: Stopped")
+			startBtn.Enable()
+			stopBtn.Disable()
+			logger.Log("Stopped watching")
+		}
 	}
 
-	return startBtn, stopBtn
-}
-
-func handleStartWatching(window fyne.Window, state *AppState, dirEntry *widget.Entry, statusLabel *widget.Label, startBtn, stopBtn *widget.Button) {
-	dir := dirEntry.Text
-	if dir == "" {
-		dialog.ShowError(fmt.Errorf("please select a directory first"), window)
-		return
-	}
-
-	if state.isWatching {
-		dialog.ShowInformation("Already Watching", "Directory watcher is already running", window)
-		return
-	}
-
-	state.watchDir = dir
-	state.watcherCancel = fsw.InitWatch(dir)
-	state.isWatching = true
-
-	statusLabel.SetText("Status: Watching " + dir)
-	startBtn.Disable()
-	stopBtn.Enable()
-	logger.Log("%s", "Started watching: "+dir)
-}
-
-func handleStopWatching(state *AppState, statusLabel *widget.Label, startBtn, stopBtn *widget.Button) {
-	if !state.isWatching {
-		return
-	}
-
-	if state.watcherCancel != nil {
-		state.watcherCancel()
-		state.watcherCancel = nil
-	}
-	state.isWatching = false
-
-	statusLabel.SetText("Status: Stopped")
-	startBtn.Enable()
-	stopBtn.Disable()
-	logger.Log("Stopped watching")
+	return container.NewVBox(
+		widget.NewLabel("Directory Selection:"),
+		container.NewBorder(nil, nil, nil, selectBtn, dirEntry),
+		dirLabel,
+		widget.NewSeparator(),
+		statusLabel,
+		container.NewHBox(startBtn, stopBtn),
+		layout.NewSpacer(),
+	)
 }
 
 func showDirectoryPicker(window fyne.Window, dirEntry *widget.Entry, dirLabel *widget.Label) {
 	currentDir := getCurrentDirectory()
 	listableURI, _ := storage.ListerForURI(storage.NewFileURI(currentDir))
 
-	dialog.ShowFolderOpen(func(dir fyne.ListableURI, err error) {
+	fd := dialog.NewFolderOpen(func(dir fyne.ListableURI, err error) {
 		if err != nil || dir == nil {
 			return
 		}
@@ -130,10 +96,8 @@ func showDirectoryPicker(window fyne.Window, dirEntry *widget.Entry, dirLabel *w
 		dirLabel.SetText("Selected: " + path)
 	}, window)
 
-	// Set initial directory if possible
-	if fd := dialog.NewFolderOpen(nil, window); fd != nil {
-		if listableURI != nil {
-			fd.SetLocation(listableURI)
-		}
+	if listableURI != nil {
+		fd.SetLocation(listableURI)
 	}
+	fd.Show()
 }
