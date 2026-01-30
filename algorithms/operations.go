@@ -5,10 +5,11 @@ import (
 	"unsafe"
 
 	"github.com/ikugo-dev/DeFence/logger"
+	"github.com/ikugo-dev/DeFence/metadata"
 )
 
 func EncryptFile(fileName string, key []byte, algorithm string) []byte {
-	metadata := createMetadata(fileName, algorithm, "TigerHash")
+	metadata := metadata.Create(fileName, algorithm, "TigerHash")
 	data, err := os.ReadFile(fileName)
 	if err != nil {
 		logger.Log("Failed to read file: %s", err)
@@ -39,7 +40,7 @@ func DecryptFile(fileName string, key []byte) []byte {
 		logger.Log("Failed to read encrypted file: %v", err)
 		return nil
 	}
-	metadata := readMetadata(fileData)
+	metadata := metadata.Read(fileData)
 	encryptedData := fileData[4+unsafe.Sizeof(metadata):]
 
 	decrypted := DecryptFileData(encryptedData, key, metadata.EncryptionAlgorithm)

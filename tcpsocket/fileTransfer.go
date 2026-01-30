@@ -3,23 +3,14 @@ package tcpsocket
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ikugo-dev/DeFence/algorithms"
 )
 
-type FileMetadata struct {
-	FileName            string    `json:"fileName"`
-	FileSize            int64     `json:"fileSize"`
-	CreationDateTime    time.Time `json:"creationDateTime"`
-	EncryptionAlgorithm string    `json:"encryptionAlgorithm"`
-	HashingAlgorithm    string    `json:"hashingAlgorithm"`
-}
-
 var activeListener net.Listener
 
 func SendFile(fileName, address, algorithm string, key []byte) error {
-	encryptedData := algorithms.EncryptFile(fileName, key, algorithm, "Tiger")
+	encryptedData := algorithms.EncryptFile(fileName, key, algorithm)
 
 	conn, err := net.Dial("tcp", address)
 	if err != nil {

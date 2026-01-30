@@ -2,26 +2,15 @@ package gui
 
 import (
 	"fmt"
-	"os"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
-	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
 	"github.com/ikugo-dev/DeFence/fsw"
 	"github.com/ikugo-dev/DeFence/logger"
 )
-
-func getCurrentDirectory() string {
-	dir, err := os.Getwd()
-	if err != nil {
-		logger.Log("Error getting current directory: %v", err)
-		return "."
-	}
-	return dir
-}
 
 func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 	dirEntry := widget.NewEntry()
@@ -32,6 +21,13 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 	selectBtn := widget.NewButton("Select Directory", func() {
 		showDirectoryPicker(window, dirEntry, dirLabel)
 	})
+
+	algorithmSelect := widget.NewSelect([]string{"Railfence Cipher", "XXTEA", "CBC"}, nil)
+	algorithmSelect.SetSelected("Railfence Cipher")
+
+	keyEntry := widget.NewEntry()
+	keyEntry.SetPlaceHolder("Enter encryption key")
+	keyEntry.Password = true
 
 	statusLabel := widget.NewLabel("Status: Stopped")
 	startBtn := widget.NewButton("Start Watching", nil)
@@ -47,6 +43,13 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 			dialog.ShowInformation("Already Watching", "Directory watcher is already running", window)
 			return
 		}
+		if keyEntry.Text == "" {
+			dialog.ShowError(fmt.Errorf("Please enter a key"), window)
+			return
+		}
+
+		// algorithm := algorithmSelect.Selected
+		// key := keyStringToBigEndianBytes(keyEntry.Text)
 
 		state.watchDir = dirEntry.Text
 		state.watcherCancel = fsw.InitWatch(dirEntry.Text)
@@ -77,27 +80,13 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 		container.NewBorder(nil, nil, nil, selectBtn, dirEntry),
 		dirLabel,
 		widget.NewSeparator(),
+		widget.NewLabel("Select Algorithm:"),
+		algorithmSelect,
+		widget.NewLabel("Encryption / Decryption Key:"),
+		keyEntry,
+		widget.NewSeparator(),
 		statusLabel,
 		container.NewHBox(startBtn, stopBtn),
 		layout.NewSpacer(),
 	)
-}
-
-func showDirectoryPicker(window fyne.Window, dirEntry *widget.Entry, dirLabel *widget.Label) {
-	currentDir := getCurrentDirectory()
-	listableURI, _ := storage.ListerForURI(storage.NewFileURI(currentDir))
-
-	fd := dialog.NewFolderOpen(func(dir fyne.ListableURI, err error) {
-		if err != nil || dir == nil {
-			return
-		}
-		path := dir.Path()
-		dirEntry.SetText(path)
-		dirLabel.SetText("Selected: " + path)
-	}, window)
-
-	if listableURI != nil {
-		fd.SetLocation(listableURI)
-	}
-	fd.Show()
 }

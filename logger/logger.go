@@ -49,7 +49,12 @@ func Clear() {
 	mu.Unlock()
 }
 
-func LogWithDialog(window fyne.Window, format string, args ...any) {
-	dialog.ShowError(fmt.Errorf(format, args...), window)
+func LogWithDialog(window fyne.Window, dialogType, format string, args ...any) {
+	switch dialogType {
+	case "Error":
+		dialog.ShowError(fmt.Errorf(format, args...), window)
+	default:
+		dialog.ShowInformation(dialogType, fmt.Sprintf(format, args...), window)
+	}
 	Log(format, args...)
 }

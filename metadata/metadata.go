@@ -1,4 +1,4 @@
-package algorithms
+package metadata
 
 import (
 	"encoding/binary"
@@ -16,7 +16,7 @@ type Metadata struct {
 	HashingAlgorithm    string `json:"hashingAlgorithm"`
 }
 
-func createMetadata(fileName, algorithm, hashing string) []byte {
+func Create(fileName, algorithm, hashing string) []byte {
 	fileInfo, err := os.Stat(fileName)
 	if err != nil {
 		logger.Log("Could not read file %s: %v", fileName, err)
@@ -42,7 +42,7 @@ func createMetadata(fileName, algorithm, hashing string) []byte {
 	return append(lenBuf, jsonContent...)
 }
 
-func readMetadata(data []byte) Metadata {
+func Read(data []byte) Metadata {
 	metadataLen := binary.BigEndian.Uint32(data[:4])
 	metadataBytes := data[4 : 4+metadataLen]
 

@@ -14,11 +14,9 @@ import (
 	"github.com/ikugo-dev/DeFence/tcpsocket"
 )
 
-// Send File Section
 func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObject {
 	var selectedFile string
 	fileLabel := widget.NewLabel("No file selected")
-
 	selectFileBtn := widget.NewButton("Select File to Send", func() {
 		showFilePicker(window, &selectedFile, fileLabel)
 	})
@@ -33,6 +31,10 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 	algorithmSelect := widget.NewSelect([]string{"Railfence Cipher", "XXTEA", "CBC"}, nil)
 	algorithmSelect.SetSelected("XXTEA")
 
+	keyEntry := widget.NewEntry()
+	keyEntry.SetPlaceHolder("Enter encryption key")
+	keyEntry.Password = true
+
 	sendBtn := widget.NewButton("Send File", func() {
 		if selectedFile == "" {
 			dialog.ShowError(fmt.Errorf("please select a file to send"), window)
@@ -46,25 +48,27 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 			dialog.ShowError(fmt.Errorf("please enter port number"), window)
 			return
 		}
+		if keyEntry.Text == "" {
+			dialog.ShowError(fmt.Errorf("Please enter a key"), window)
+			return
+		}
 
 		address := ipEntry.Text + ":" + portEntry.Text
 		algorithm := algorithmSelect.Selected
+		key := keyStringToBigEndianBytes(keyEntry.Text)
 
 		progress := dialog.NewProgressInfinite("Sending", "Encrypting and sending file...", window)
 		progress.Show()
 
 		go func() {
-			err := tcpsocket.SendFile(selectedFile, address, algorithm, []byte("Tiger"))
-			
+			err := tcpsocket.SendFile(selectedFile, address, algorithm, key)
+
 			fyne.Do(func() {
 				progress.Hide()
 				if err != nil {
-					logger.Log("Failed to send file: %v", err)
-					dialog.ShowError(fmt.Errorf("failed to send file: %v", err), window)
+					logger.LogWithDialog(window, "Error", "failed to send file: %v", err.Error())
 				} else {
-					logger.Log("Sent file %s to %s (Algorithm: %s)", 
-						filepath.Base(selectedFile), address, algorithm)
-					dialog.ShowInformation("Success", "File sent successfully!", window)
+					logger.LogWithDialog(window, "Success", "Sent file %s to %s successfully (Algorithm: %s)", filepath.Base(selectedFile), address, algorithm)
 				}
 			})
 		}()
@@ -82,13 +86,14 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 		widget.NewSeparator(),
 		widget.NewLabel("Select Algorithm:"),
 		algorithmSelect,
+		widget.NewLabel("Encryption / Decryption Key:"),
+		keyEntry,
 		widget.NewSeparator(),
 		layout.NewSpacer(),
 		sendBtn,
 	)
 }
 
-// Receive File Section
 func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasObject {
 	portEntry := widget.NewEntry()
 	portEntry.SetPlaceHolder("Port to listen on (e.g., 8080)")
@@ -96,6 +101,10 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 
 	saveDir := "./received_files/"
 	saveDirLabel := widget.NewLabel("Save to: " + saveDir)
+
+	keyEntry := widget.NewEntry()
+	keyEntry.SetPlaceHolder("Enter encryption key")
+	keyEntry.Password = true
 
 	selectDirBtn := widget.NewButton("Choose Save Directory", func() {
 		currentDir := getCurrentDirectory()
@@ -121,6 +130,12 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 	stopBtn.Disable()
 
 	startBtn.OnTapped = func() {
+		if keyEntry.Text == "" {
+			dialog.ShowError(fmt.Errorf("Please enter a key"), window)
+			return
+		}
+		// key := keyStringToBigEndianBytes(keyEntry.Text)
+
 		err := tcpsocket.StartListening(
 			portEntry.Text,
 			saveDir,
@@ -159,6 +174,9 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 		widget.NewSeparator(),
 		selectDirBtn,
 		saveDirLabel,
+		widget.NewSeparator(),
+		widget.NewLabel("Encryption / Decryption Key:"),
+		keyEntry,
 		widget.NewSeparator(),
 		statusLabel,
 		container.NewHBox(startBtn, stopBtn),
