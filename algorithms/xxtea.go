@@ -24,13 +24,13 @@ func EncryptXXTEA(data []byte, key []byte) []byte {
 		log.Fatal("invalid key size")
 	}
 
-	v, ok := bytesToUint32s(data)
-	if !ok {
+	v, err := bytesToUint32s(data)
+	if err != nil {
 		log.Fatal("invalid key")
 	}
 	n := len(v)
-	k, ok := bytesToUint32s(key)
-	if !ok {
+	k, err := bytesToUint32s(key)
+	if err != nil {
 		log.Fatal("invalid key")
 	}
 
@@ -52,8 +52,8 @@ func EncryptXXTEA(data []byte, key []byte) []byte {
 		z = v[n-1]
 		rounds--
 	}
-	result, ok := uint32ToBytes(v)
-	if !ok {
+	result, err := uint32ToBytes(v)
+	if err != nil {
 		log.Fatal("cannot convert encripted result back to bytes")
 	}
 	return result
@@ -67,13 +67,13 @@ func DecryptXXTEA(data []byte, key []byte) []byte {
 		log.Fatal("invalid key size")
 	}
 
-	v, ok := bytesToUint32s(data)
-	if !ok {
+	v, err := bytesToUint32s(data)
+	if err != nil {
 		log.Fatal("invalid key")
 	}
 	n := len(v)
-	k, ok := bytesToUint32s(key)
-	if !ok {
+	k, err := bytesToUint32s(key)
+	if err != nil {
 		log.Fatal("invalid key")
 	}
 
@@ -94,8 +94,8 @@ func DecryptXXTEA(data []byte, key []byte) []byte {
 		sum -= DELTA
 		rounds--
 	}
-	result, ok := uint32ToBytes(v)
-	if !ok {
+	result, err := uint32ToBytes(v)
+	if err != nil {
 		log.Fatal("cannot convert encripted result back to bytes")
 	}
 	return result

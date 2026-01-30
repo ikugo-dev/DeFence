@@ -1,8 +1,10 @@
 package gui
 
 import (
+	"encoding/binary"
 	"fmt"
 	"path/filepath"
+	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -154,6 +156,20 @@ func showSaveFilePicker(window fyne.Window, outputFile *string, outputLabel *wid
 	fd.Show()
 }
 
+func KeyStringToBigEndianBytes(s string) []byte {
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return nil
+	}
+	if n <= 1 {
+		return nil
+	}
+
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, uint32(n))
+	return buf
+}
+
 func processFile(window fyne.Window, state *AppState, selectedFile, outputFile *string, algorithmSelect *widget.Select, keyEntry *widget.Entry, operationRadio *widget.RadioGroup) {
 	if *selectedFile == "" {
 		dialog.ShowError(fmt.Errorf("please select a file first"), window)
@@ -178,16 +194,16 @@ func processFile(window fyne.Window, state *AppState, selectedFile, outputFile *
 			progress.Hide()
 		})
 
-		key := []byte(keyEntry.Text)
-		if operation == "Encrypt" {
+		key := KeyStringToBigEndianBytes(keyEntry.Text)
+		switch operation {
+		case "Encrypt":
 			algorithms.EncryptFile(*selectedFile, key, algorithm, "Tiger")
-		} else if operation == "Decrypt" {
+		case "Decrypt":
 			algorithms.DecryptFile(*selectedFile, key)
 		}
 
 		logger.Log("%sed file: %s → %s (Algorithm: %s)", operation, filepath.Base(*selectedFile), filepath.Base(output), algorithm)
 
-		dialog.ShowInformation("Success",
-			fmt.Sprintf("File %sed successfully!\nOutput: %s", operation, output), window)
+		dialog.ShowInformation("Success", fmt.Sprintf("File %sed successfully!\nOutput: %s", operation, output), window)
 	}()
 }

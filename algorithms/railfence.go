@@ -2,13 +2,15 @@ package algorithms
 
 import (
 	"log"
-	"strconv"
 )
 
 func EncryptRailfence(text []byte, byteKey []byte) []byte {
-	key, err := strconv.Atoi(string(byteKey))
+	key, err := bytesToint(byteKey)
 	if err != nil || key <= 1 {
 		log.Fatal("invalid key")
+	}
+	if key > len(text) {
+		key = len(text)
 	}
 	// create the matrix to cipher plain text
 	// key = rows , length(text) = columns
@@ -61,8 +63,8 @@ func EncryptRailfence(text []byte, byteKey []byte) []byte {
 }
 
 func DecryptRailfence(cipher []byte, byteKey []byte) []byte {
-	key, ok := bytesToint(byteKey)
-	if !ok {
+	key, err := bytesToint(byteKey)
+	if err != nil {
 		log.Fatal("invalid key size")
 	}
 

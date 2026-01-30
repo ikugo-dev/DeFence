@@ -3,33 +3,34 @@ package algorithms
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 )
 
-func bytesToint(b []byte) (value int, ok bool) {
+func bytesToint(b []byte) (int, error) {
 	if len(b)%4 != 0 {
-		return 0, false
+		return 0, fmt.Errorf("invalid key size")
 	}
 
-	u := binary.LittleEndian.Uint32(b[0:4])
-	return int(u), true
+	u := binary.BigEndian.Uint32(b[0:4])
+	return int(u), nil
 }
 
-func bytesToUint32s(b []byte) (value []uint32, ok bool) {
+func bytesToUint32s(b []byte) ([]uint32, error) {
 	if len(b)%4 != 0 {
-		return nil, false
+		return nil, fmt.Errorf("invalid key size")
 	}
 	u := make([]uint32, len(b)/4)
 	for i := range u {
-		u[i] = binary.LittleEndian.Uint32(b[i*4 : (i+1)*4])
+		u[i] = binary.BigEndian.Uint32(b[i*4 : (i+1)*4])
 	}
-	return u, true
+	return u, nil
 }
 
-func uint32ToBytes(u []uint32) (value []byte, ok bool) {
+func uint32ToBytes(u []uint32) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.LittleEndian, u)
+	err := binary.Write(buf, binary.BigEndian, u)
 	if err != nil {
-		return nil, false
+		return nil, fmt.Errorf("invalid key size")
 	}
-	return buf.Bytes(), true
+	return buf.Bytes(), nil
 }
