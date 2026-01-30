@@ -1,13 +1,11 @@
 package algorithms
 
-import (
-	"log"
-)
+import "fmt"
 
-func encryptRailfence(text []byte, byteKey []byte) []byte {
+func encryptRailfence(text []byte, byteKey []byte) ([]byte, error) {
 	key, err := bytesToint(byteKey)
 	if err != nil || key <= 1 {
-		log.Fatal("invalid key")
+		return nil, fmt.Errorf("invalid key")
 	}
 	if key > len(text) {
 		key = len(text)
@@ -59,13 +57,13 @@ func encryptRailfence(text []byte, byteKey []byte) []byte {
 			}
 		}
 	}
-	return result
+	return result, nil
 }
 
-func decryptRailfence(cipher []byte, byteKey []byte) []byte {
+func decryptRailfence(cipher []byte, byteKey []byte) ([]byte, error) {
 	key, err := bytesToint(byteKey)
 	if err != nil {
-		log.Fatal("invalid key size")
+		return nil, fmt.Errorf("invalid key size")
 	}
 
 	rail := make([][]byte, key)
@@ -136,5 +134,5 @@ func decryptRailfence(cipher []byte, byteKey []byte) []byte {
 			row--
 		}
 	}
-	return result
+	return result, nil
 }

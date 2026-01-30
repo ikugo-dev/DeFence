@@ -3,16 +3,16 @@ package algorithms
 import (
 	"bytes"
 	"crypto/rand"
-	"log"
+	"fmt"
 )
 
 const BlockSize = 16
 
-func encryptCBC(data []byte, key []byte) []byte {
+func encryptCBC(data []byte, key []byte) ([]byte, error) {
 	iv := make([]byte, BlockSize)
 	rand.Read(iv)
 	if len(key) != KeySize {
-		log.Fatal("invalid key size")
+		return nil, fmt.Errorf("invalid key size")
 	}
 
 	data = pkcs7Pad(data)
@@ -25,20 +25,23 @@ func encryptCBC(data []byte, key []byte) []byte {
 	for i := 0; i < len(data); i += BlockSize {
 		block := data[i : i+BlockSize]
 		xored := xorBlocks(block, prev)
-		enc := encryptXXTEA(xored, key)
+		enc, err := encryptXXTEA(xored, key)
+		if err != nil {
+			return nil, fmt.Errorf("error while encrypting XXTEA in CBC; %s", err)
+		}
 		out = append(out, enc...)
 		prev = enc
 	}
 
-	return out
+	return out, nil
 }
 
-func decryptCBC(data []byte, key []byte) []byte {
+func decryptCBC(data []byte, key []byte) ([]byte, error) {
 	if len(data) < BlockSize*2 {
-		log.Fatal("ciphertext too short")
+		return nil, fmt.Errorf("ciphertext too short")
 	}
 	if len(key) != KeySize {
-		log.Fatal("invalid key size")
+		return nil, fmt.Errorf("invalid key size")
 	}
 
 	iv := data[:BlockSize]
@@ -49,17 +52,20 @@ func decryptCBC(data []byte, key []byte) []byte {
 
 	for i := 0; i < len(data); i += BlockSize {
 		block := data[i : i+BlockSize]
-		dec := decryptXXTEA(block, key)
+		dec, err := decryptXXTEA(block, key)
+		if err != nil {
+			return nil, fmt.Errorf("error while decrypting XXTEA in CBC; %s", err)
+		}
 		plain := xorBlocks(dec, prev)
 		out = append(out, plain...)
 		prev = block
 	}
 
-	out = pkcs7Unpad(out)
-	if out == nil {
-		log.Fatal("invalid padding")
+	result, err := pkcs7Unpad(out)
+	if err != nil {
+		return nil, fmt.Errorf("invalid padding")
 	}
-	return out
+	return result, nil
 }
 
 func xorBlocks(a, b []byte) []byte {
@@ -79,18 +85,18 @@ func pkcs7Pad(data []byte) []byte {
 	return append(data, pad...)
 }
 
-func pkcs7Unpad(data []byte) []byte {
+func pkcs7Unpad(data []byte) ([]byte, error) {
 	if len(data) == 0 || len(data)%BlockSize != 0 {
-		return nil
+		return nil, fmt.Errorf("PKCS7 Unpad: data is invalid size")
 	}
 	padLen := int(data[len(data)-1])
 	if padLen == 0 || padLen > BlockSize {
-		return nil
+		return nil, fmt.Errorf("PKCS7 Unpad: lenght of padding is invalid size")
 	}
 	for i := range padLen {
 		if data[len(data)-1-i] != byte(padLen) {
-			return nil
+			return nil, fmt.Errorf("PKCS7 Unpad: idek")
 		}
 	}
-	return data[:len(data)-padLen]
+	return data[:len(data)-padLen], nil
 }

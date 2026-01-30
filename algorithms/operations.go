@@ -1,28 +1,27 @@
 package algorithms
 
 import (
+	"fmt"
 	"os"
 	"unsafe"
 
-	"github.com/ikugo-dev/DeFence/logger"
 	"github.com/ikugo-dev/DeFence/metadata"
 )
 
-func EncryptFile(fileName string, key []byte, algorithm string) []byte {
+func EncryptFile(fileName string, key []byte, algorithm string) ([]byte, error) {
 	metadata := metadata.Create(fileName, algorithm, "TigerHash")
 	data, err := os.ReadFile(fileName)
 	if err != nil {
-		logger.Log("Failed to read file: %s", err)
-		return nil
+		return nil, fmt.Errorf("Failed to read file: %s", err)
 	}
-	encryptedData := EncryptFileData(data, key, algorithm)
-	if encryptedData == nil {
-		return nil
+	encryptedData, err := EncryptFileData(data, key, algorithm)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read file: %s", err)
 	}
-	return append(metadata, encryptedData...)
+	return append(metadata, encryptedData...), nil
 }
 
-func EncryptFileData(data []byte, key []byte, algorithm string) []byte {
+func EncryptFileData(data []byte, key []byte, algorithm string) ([]byte, error) {
 	switch algorithm {
 	case "Railfence":
 		return encryptRailfence(data, key)
@@ -31,28 +30,26 @@ func EncryptFileData(data []byte, key []byte, algorithm string) []byte {
 	case "CBC":
 		return encryptCBC(data, key)
 	}
-	return nil //ERROR
+	return nil, fmt.Errorf("invalid algorithm selection: %s", algorithm)
 }
 
-func DecryptFile(fileName string, key []byte) []byte {
+func DecryptFile(fileName string, key []byte) ([]byte, error) {
 	fileData, err := os.ReadFile(fileName)
 	if err != nil {
-		logger.Log("Failed to read encrypted file: %v", err)
-		return nil
+		return nil, fmt.Errorf("Failed to read encrypted file: %v", err)
 	}
 	metadata := metadata.Read(fileData)
 	encryptedData := fileData[4+unsafe.Sizeof(metadata):]
 
-	decrypted := DecryptFileData(encryptedData, key, metadata.EncryptionAlgorithm)
-	if decrypted == nil {
-		logger.Log("Decryption failed")
-		return nil
+	decrypted, err := DecryptFileData(encryptedData, key, metadata.EncryptionAlgorithm)
+	if err != nil {
+		return nil, fmt.Errorf("Decryption failed: %s", err)
 	}
 
-	return decrypted
+	return decrypted, nil
 }
 
-func DecryptFileData(data []byte, key []byte, algorithm string) []byte {
+func DecryptFileData(data []byte, key []byte, algorithm string) ([]byte, error) {
 	switch algorithm {
 	case "Railfence Cipher":
 		return decryptRailfence(data, key)
@@ -61,5 +58,5 @@ func DecryptFileData(data []byte, key []byte, algorithm string) []byte {
 	case "CBC":
 		return decryptCBC(data, key)
 	}
-	return nil //ERROR
+	return nil, fmt.Errorf("invalid algorithm selection: %s", algorithm)
 }

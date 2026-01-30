@@ -58,10 +58,17 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 
 		go func() {
 
-			if operation == "Encrypt" {
-				algorithms.EncryptFile(selectedFile, key, algorithm)
-			} else {
-				algorithms.DecryptFile(selectedFile, key)
+			switch operation {
+			case "Encrypt":
+				_, err := algorithms.EncryptFile(selectedFile, key, algorithm)
+				if err != nil {
+					logger.LogWithDialog(window, "Error", "Error while encrypting: %s", err)
+				}
+			case "Decrypt":
+				_, err := algorithms.DecryptFile(selectedFile, key)
+				if err != nil {
+					logger.LogWithDialog(window, "Error", "Error while decrypting: %s", err)
+				}
 			}
 
 			fyne.Do(func() {
