@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"strconv"
 )
 
 func bytesToint(b []byte) (int, error) {
@@ -33,4 +34,15 @@ func uint32ToBytes(u []uint32) ([]byte, error) {
 		return nil, fmt.Errorf("invalid key size")
 	}
 	return buf.Bytes(), nil
+}
+
+func KeyStringToBigEndianBytes(s string) []byte {
+	n, err := strconv.Atoi(s)
+	if err != nil || n <= 1 {
+		return nil
+	}
+
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, uint32(n))
+	return buf
 }

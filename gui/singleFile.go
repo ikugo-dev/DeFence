@@ -1,10 +1,8 @@
 package gui
 
 import (
-	"encoding/binary"
 	"fmt"
 	"path/filepath"
-	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -50,7 +48,7 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 
 		operation := operationRadio.Selected
 		algorithm := algorithmSelect.Selected
-		key := keyStringToBigEndianBytes(keyEntry.Text)
+		key := algorithms.KeyStringToBigEndianBytes(keyEntry.Text)
 		output := determineOutputPath(selectedFile, outputFile, operation)
 
 		progress := dialog.NewProgressInfinite("Processing", fmt.Sprintf("%sing file with %s...", operation, algorithm), window)
@@ -112,15 +110,4 @@ func determineOutputPath(selectedFile, outputFile, operation string) string {
 		return selectedFile + ".enc"
 	}
 	return selectedFile + ".dec"
-}
-
-func keyStringToBigEndianBytes(s string) []byte {
-	n, err := strconv.Atoi(s)
-	if err != nil || n <= 1 {
-		return nil
-	}
-
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint32(buf, uint32(n))
-	return buf
 }

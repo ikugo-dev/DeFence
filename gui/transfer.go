@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
+	"github.com/ikugo-dev/DeFence/algorithms"
 	"github.com/ikugo-dev/DeFence/logger"
 	"github.com/ikugo-dev/DeFence/tcpsocket"
 )
@@ -53,23 +54,28 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 			return
 		}
 
-		address := ipEntry.Text + ":" + portEntry.Text
+		address := ipEntry.Text
+		port := portEntry.Text
 		algorithm := algorithmSelect.Selected
-		key := keyStringToBigEndianBytes(keyEntry.Text)
+		key := algorithms.KeyStringToBigEndianBytes(keyEntry.Text)
 
 		progress := dialog.NewProgressInfinite("Sending", "Encrypting and sending file...", window)
 		progress.Show()
 
 		go func() {
-			err := tcpsocket.SendFile(selectedFile, address, algorithm, key)
-
+			encryptedData, err := algorithms.EncryptFile(selectedFile, key, algorithm)
 			fyne.Do(func() {
-				progress.Hide()
 				if err != nil {
-					logger.LogWithDialog(window, "Error", "failed to send file: %v", err.Error())
-				} else {
-					logger.LogWithDialog(window, "Success", "Sent file %s to %s successfully (Algorithm: %s)", filepath.Base(selectedFile), address, algorithm)
+					logger.LogWithDialog(window, "Error", "Error while encrypting: %s", err)
+					return
 				}
+				progress.Hide()
+				err = tcpsocket.SendFile(address, port, encryptedData)
+				if err != nil {
+					logger.LogWithDialog(window, "Error", "Failed to send file: %v", err.Error())
+					return
+				}
+				logger.LogWithDialog(window, "Success", "Sent file %s to %s successfully (Algorithm: %s)", filepath.Base(selectedFile), port, algorithm)
 			})
 		}()
 	})
@@ -134,21 +140,25 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 			dialog.ShowError(fmt.Errorf("Please enter a key"), window)
 			return
 		}
-		// key := keyStringToBigEndianBytes(keyEntry.Text)
+		key := algorithms.KeyStringToBigEndianBytes(keyEntry.Text)
 
-		err := tcpsocket.StartListening(
-			portEntry.Text,
-			saveDir,
-			func(status string) {
-				logger.Log("%s", status)
-				statusLabel.SetText("Status: " + status)
-			},
-		)
+		dataCh := make(chan []byte)
+		go func() {
+			err := tcpsocket.StartListening(portEntry.Text, dataCh)
+			if err != nil {
+				logger.LogWithDialog(window, "Error", "Error while trying to listen; %s", err)
+			}
+		}()
+		go func() {
+			allData := tcpsocket.CollectAll(dataCh)
 
-		if err != nil {
-			dialog.ShowError(err, window)
-			return
-		}
+			decrypted, err := algorithms.DecryptFileData(allData, key)
+			if err != nil {
+				logger.LogWithDialog(window, "Error", "Decrypting failed: %v", err)
+				return
+			}
+			logger.LogWithDialog(window, "Success", "Received %d bytes total", len(decrypted))
+		}()
 
 		startBtn.Disable()
 		stopBtn.Enable()

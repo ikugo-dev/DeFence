@@ -38,18 +38,21 @@ func DecryptFile(fileName string, key []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read encrypted file: %v", err)
 	}
-	metadata := metadata.Read(fileData)
-	encryptedData := fileData[4+unsafe.Sizeof(metadata):]
+	return DecryptFileData(fileData, key)
+}
 
-	decrypted, err := DecryptFileData(encryptedData, key, metadata.EncryptionAlgorithm)
+func DecryptFileData(data []byte, key []byte) ([]byte, error) {
+	metadata := metadata.Read(data)
+	encryptedData := data[4+unsafe.Sizeof(metadata):]
+
+	decrypted, err := DecryptRawData(encryptedData, key, metadata.EncryptionAlgorithm)
 	if err != nil {
 		return nil, fmt.Errorf("Decryption failed: %s", err)
 	}
-
 	return decrypted, nil
 }
 
-func DecryptFileData(data []byte, key []byte, algorithm string) ([]byte, error) {
+func DecryptRawData(data []byte, key []byte, algorithm string) ([]byte, error) {
 	switch algorithm {
 	case "Railfence Cipher":
 		return decryptRailfence(data, key)
