@@ -9,14 +9,15 @@ import (
 )
 
 type Metadata struct {
-	FileName            string `json:"fileName"`
-	FileSize            int64  `json:"fileSize"`
-	CreationDateTime    string `json:"creationDateTime"`
-	EncryptionAlgorithm string `json:"encryptionAlgorithm"`
-	HashingAlgorithm    string `json:"hashingAlgorithm"`
+	FileName            string   `json:"fileName"`
+	FileSize            int64    `json:"fileSize"`
+	CreationDateTime    string   `json:"creationDateTime"`
+	EncryptionAlgorithm string   `json:"encryptionAlgorithm"`
+	HashingAlgorithm    string   `json:"hashingAlgorithm"`
+	HashingResult       [24]byte `json:"hashingResult"`
 }
 
-func Create(fileName, algorithm, hashing string) []byte {
+func Create(fileName, algorithm, hashingAlgorithm string, hashingResult [24]byte) []byte {
 	fileInfo, err := os.Stat(fileName)
 	if err != nil {
 		logger.Log("Could not read file %s: %v", fileName, err)
@@ -28,7 +29,8 @@ func Create(fileName, algorithm, hashing string) []byte {
 		FileSize:            fileInfo.Size(),
 		CreationDateTime:    fileInfo.ModTime().String(),
 		EncryptionAlgorithm: algorithm,
-		HashingAlgorithm:    hashing,
+		HashingAlgorithm:    hashingAlgorithm,
+		HashingResult:       hashingResult,
 	}
 	jsonContent, err := json.Marshal(metadata)
 

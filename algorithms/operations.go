@@ -9,19 +9,24 @@ import (
 )
 
 func EncryptFile(fileName string, key []byte, algorithm string) ([]byte, error) {
-	metadata := metadata.Create(fileName, algorithm, "TigerHash")
-	data, err := os.ReadFile(fileName)
+	fileData, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read file: %s", err)
 	}
-	encryptedData, err := EncryptFileData(data, key, algorithm)
+	return EncryptFileData(fileName, fileData, key, algorithm)
+}
+
+func EncryptFileData(fileName string, data, key []byte, algorithm string) ([]byte, error) {
+	encryptedData, err := EncryptRawData(data, key, algorithm)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read file: %s", err)
 	}
+	hashedData := TigerHash(encryptedData)
+	metadata := metadata.Create(fileName, algorithm, "TigerHash", hashedData)
 	return append(metadata, encryptedData...), nil
 }
 
-func EncryptFileData(data []byte, key []byte, algorithm string) ([]byte, error) {
+func EncryptRawData(data []byte, key []byte, algorithm string) ([]byte, error) {
 	switch algorithm {
 	case "Railfence":
 		return encryptRailfence(data, key)
@@ -44,6 +49,11 @@ func DecryptFile(fileName string, key []byte) ([]byte, error) {
 func DecryptFileData(data []byte, key []byte) ([]byte, error) {
 	metadata := metadata.Read(data)
 	encryptedData := data[4+unsafe.Sizeof(metadata):]
+
+	hashedData := TigerHash(encryptedData)
+	if hashedData != metadata.HashingResult {
+		return nil, fmt.Errorf("Incorrect data recieved: Hashes differ")
+	}
 
 	decrypted, err := DecryptRawData(encryptedData, key, metadata.EncryptionAlgorithm)
 	if err != nil {

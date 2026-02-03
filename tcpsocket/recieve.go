@@ -7,20 +7,22 @@ import (
 	"github.com/ikugo-dev/DeFence/logger"
 )
 
-var activeListener net.Listener
-
-func SendFile(address, port string, encryptedData []byte) error {
-	conn, err := net.Dial("tcp", address+":"+port)
+func GetLocalIP() (ip string, ok bool) {
+	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return err
+		return "Unknown IP", false
 	}
-	defer conn.Close()
-
-	if _, err := conn.Write(encryptedData); err != nil {
-		return err
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String(), true
+			}
+		}
 	}
-	return nil
+	return "Unknown IP", false
 }
+
+var activeListener net.Listener
 
 func StartListening(port string, dataCh chan<- []byte) error {
 	ln, err := net.Listen("tcp", ":"+port)

@@ -26,7 +26,7 @@ func TestEncryptRailfence(t *testing.T) {
 		{"defend the east wall", 3, "dnhaweedtees alf  tl"},
 	}
 	for _, testData := range testDataEncrypt {
-		result, _ := a.EncryptFileData([]byte(testData.input), toByteArray(testData.rails), "Railfence")
+		result, _ := a.EncryptRawData([]byte(testData.input), toByteArray(testData.rails), "Railfence")
 		if string(result) != testData.output {
 			t.Errorf(`algorithms.EncryptRailfence("%s", %d) = "%s", want "%s"`,
 				testData.input, testData.rails, result, testData.output)
