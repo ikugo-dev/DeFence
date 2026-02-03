@@ -8,8 +8,8 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"github.com/ikugo-dev/DeFence/fsw"
-	"github.com/ikugo-dev/DeFence/logger"
+	"github.com/ikugo-dev/DeFence/internal/fsw"
+	"github.com/ikugo-dev/DeFence/internal/logger"
 )
 
 func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {

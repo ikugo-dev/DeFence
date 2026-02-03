@@ -5,7 +5,7 @@ import (
 	"os"
 	"unsafe"
 
-	"github.com/ikugo-dev/DeFence/metadata"
+	"github.com/ikugo-dev/DeFence/internal/metadata"
 )
 
 func EncryptFile(fileName string, key []byte, algorithm string) ([]byte, error) {

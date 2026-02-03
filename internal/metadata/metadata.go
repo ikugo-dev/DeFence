@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/ikugo-dev/DeFence/logger"
+	"github.com/ikugo-dev/DeFence/internal/logger"
 )
 
 type Metadata struct {

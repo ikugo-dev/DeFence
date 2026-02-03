@@ -8,7 +8,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
-	"github.com/ikugo-dev/DeFence/logger"
+	"github.com/ikugo-dev/DeFence/internal/logger"
 )
 
 func getCurrentDirectory() string {

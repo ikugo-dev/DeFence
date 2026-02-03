@@ -4,7 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"github.com/ikugo-dev/DeFence/logger"
+	"github.com/ikugo-dev/DeFence/internal/logger"
 )
 
 func createActivityLogTab() fyne.CanvasObject {

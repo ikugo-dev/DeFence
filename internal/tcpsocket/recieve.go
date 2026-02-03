@@ -4,7 +4,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/ikugo-dev/DeFence/logger"
+	"github.com/ikugo-dev/DeFence/internal/logger"
 )
 
 func GetLocalIP() (ip string, ok bool) {

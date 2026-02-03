@@ -9,9 +9,9 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"github.com/ikugo-dev/DeFence/algorithms"
-	"github.com/ikugo-dev/DeFence/logger"
-	"github.com/ikugo-dev/DeFence/tcpsocket"
+	"github.com/ikugo-dev/DeFence/internal/algorithms"
+	"github.com/ikugo-dev/DeFence/internal/logger"
+	"github.com/ikugo-dev/DeFence/internal/tcpsocket"
 )
 
 func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObject {
