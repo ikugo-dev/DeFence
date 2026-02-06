@@ -28,8 +28,8 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 	portEntry.SetPlaceHolder("Port (e.g., 8080)")
 	portEntry.SetText("8080")
 
-	algorithmSelect := widget.NewSelect([]string{"Railfence Cipher", "XXTEA", "CBC"}, nil)
-	algorithmSelect.SetSelected("XXTEA")
+	algorithmSelect := widget.NewSelect([]string{"Railfence", "XXTEA", "CBC"}, nil)
+	algorithmSelect.SetSelected("Railfence")
 
 	keyEntry := widget.NewEntry()
 	keyEntry.SetPlaceHolder("Enter encryption key")

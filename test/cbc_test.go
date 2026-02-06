@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	a "github.com/ikugo-dev/DeFence/algorithms"
+	a "github.com/ikugo-dev/DeFence/internal/algorithms"
 )
 
 type CBCTest struct {

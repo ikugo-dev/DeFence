@@ -26,7 +26,7 @@ func encryptXXTEA(data []byte, key []byte) ([]byte, error) {
 
 	v, err := bytesToUint32s(data)
 	if err != nil {
-		return nil, fmt.Errorf("invalid key")
+		return nil, fmt.Errorf("invalid data")
 	}
 	n := len(v)
 	k, err := bytesToUint32s(key)
@@ -54,7 +54,7 @@ func encryptXXTEA(data []byte, key []byte) ([]byte, error) {
 	}
 	result, err := uint32ToBytes(v)
 	if err != nil {
-		return nil, fmt.Errorf("cannot convert encripted result back to bytes")
+		return nil, fmt.Errorf("cannot convert encrypted result back to bytes")
 	}
 	return result, nil
 }

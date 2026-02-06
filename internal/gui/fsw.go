@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
+	"github.com/ikugo-dev/DeFence/internal/algorithms"
 	"github.com/ikugo-dev/DeFence/internal/fsw"
 	"github.com/ikugo-dev/DeFence/internal/logger"
 )
@@ -22,8 +23,9 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 		showDirectoryPicker(window, dirEntry, dirLabel)
 	})
 
-	algorithmSelect := widget.NewSelect([]string{"Railfence Cipher", "XXTEA", "CBC"}, nil)
-	algorithmSelect.SetSelected("Railfence Cipher")
+	algorithmSelect := widget.NewSelect([]string{"Railfence", "XXTEA", "CBC"}, nil)
+
+	algorithmSelect.SetSelected("Railfence")
 
 	keyEntry := widget.NewEntry()
 	keyEntry.SetPlaceHolder("Enter encryption key")
@@ -48,17 +50,17 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 			return
 		}
 
-		// algorithm := algorithmSelect.Selected
-		// key := keyStringToBigEndianBytes(keyEntry.Text)
+		key := algorithms.KeyStringToBigEndianBytes(keyEntry.Text)
+		algorithm := algorithmSelect.Selected
 
 		state.watchDir = dirEntry.Text
-		state.watcherCancel = fsw.InitWatch(dirEntry.Text)
+		state.watcherCancel = fsw.InitWatch(dirEntry.Text, key, algorithm)
 		state.isWatching = true
 
 		statusLabel.SetText("Status: Watching " + dirEntry.Text)
 		startBtn.Disable()
 		stopBtn.Enable()
-		logger.Log("Started watching: " + dirEntry.Text)
+		logger.Log("Started watching: %s", dirEntry.Text)
 	}
 
 	stopBtn.OnTapped = func() {

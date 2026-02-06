@@ -22,8 +22,8 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 		showFilePicker(window, &selectedFile, fileLabel)
 	})
 
-	algorithmSelect := widget.NewSelect([]string{"Railfence Cipher", "XXTEA", "CBC"}, nil)
-	algorithmSelect.SetSelected("Railfence Cipher")
+	algorithmSelect := widget.NewSelect([]string{"Railfence", "XXTEA", "CBC"}, nil)
+	algorithmSelect.SetSelected("Railfence")
 
 	keyEntry := widget.NewEntry()
 	keyEntry.SetPlaceHolder("Enter encryption key")

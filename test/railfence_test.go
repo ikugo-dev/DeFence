@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"testing"
 
-	a "github.com/ikugo-dev/DeFence/algorithms"
+	a "github.com/ikugo-dev/DeFence/internal/algorithms"
 )
 
 type RailFenceTest struct {
@@ -36,14 +36,14 @@ func TestEncryptRailfence(t *testing.T) {
 
 func TestDecryptRailfence(t *testing.T) {
 	testDataDecrypt := []RailFenceTest{
-		{"GsGsekfrek eoe", 3, "GeeksforGeeks "},
 		{"atc toctaka ne", 2, "attack at once"},
+		{"GsGsekfrek eoe", 3, "GeeksforGeeks "},
 		{"dnhaweedtees alf  tl", 3, "defend the east wall"},
 	}
 	for _, testData := range testDataDecrypt {
 		result, _ := a.DecryptRawData([]byte(testData.input), toByteArray(testData.rails), "Railfence")
 		if string(result) != testData.output {
-			t.Errorf(`algorithms.EncryptRailfence("%s", %d) = "%s", want "%s"`,
+			t.Errorf(`algorithms.DecryptRailfence("%s", %d) = "%s", want "%s"`,
 				testData.input, testData.rails, result, testData.output)
 		}
 	}

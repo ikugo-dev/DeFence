@@ -1,6 +1,6 @@
 module github.com/ikugo-dev/DeFence
 
-go 1.25.5
+go 1.25.6
 
 require (
 	fyne.io/fyne/v2 v2.7.2
