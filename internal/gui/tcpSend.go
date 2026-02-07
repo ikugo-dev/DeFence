@@ -31,8 +31,7 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 	portEntry.SetPlaceHolder("Port (e.g., 8080)")
 	portEntry.SetText("8080")
 
-	// Create shared crypto UI components (no operation radio - always encrypts)
-	cryptoUI := CreateCryptoUIComponents(false)
+	cryptoUI := CreateCryptoUIComponents(false) // false = no operation radio (always encrypts)
 
 	selectOutputBtn := widget.NewButton("Save Encrypted Copy Locally (Optional)", func() {
 		showSaveFilePicker(window, &outputFile, outputLabel)
@@ -58,14 +57,15 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 
 		address := ipEntry.Text
 		port := portEntry.Text
-		config := cryptoUI.GetConfig()
+		algorithm := cryptoUI.GetAlgorithm()
+		key := cryptoUI.GetKey()
 
 		progress := dialog.NewProgressInfinite("Sending", "Encrypting and sending file...", window)
 		progress.Show()
 
 		go func() {
 			// Encrypt the file
-			encryptedData, err := algorithms.EncryptFile(selectedFile, config.Key, config.Algorithm)
+			encryptedData, err := algorithms.EncryptFile(selectedFile, key, algorithm)
 			if err != nil {
 				fyne.Do(func() {
 					progress.Hide()
@@ -87,21 +87,21 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 
 			// Send the file
 			err = tcpsocket.SendFile(address, port, encryptedData)
-
+			
 			fyne.Do(func() {
 				progress.Hide()
 				if err != nil {
 					dialog.ShowError(fmt.Errorf("failed to send file: %v", err), window)
 					return
 				}
-
-				msg := fmt.Sprintf("Sent file %s to %s:%s successfully (Algorithm: %s)",
-					filepath.Base(selectedFile), address, port, config.Algorithm)
-
+				
+				msg := fmt.Sprintf("Sent file %s to %s:%s successfully (Algorithm: %s)", 
+					filepath.Base(selectedFile), address, port, algorithm)
+				
 				if outputFile != "" {
 					msg += fmt.Sprintf("\nEncrypted copy saved to: %s", filepath.Base(output))
 				}
-
+				
 				dialog.ShowInformation("Success", msg, window)
 			})
 		}()

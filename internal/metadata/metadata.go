@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/ikugo-dev/DeFence/internal/logger"
 )
@@ -25,7 +26,7 @@ func Create(fileName, algorithm, hashingAlgorithm string, hashingResult [24]byte
 	}
 
 	metadata := &Metadata{
-		FileName:            fileName,
+		FileName:            filepath.Base(fileName),
 		FileSize:            fileInfo.Size(),
 		CreationDateTime:    fileInfo.ModTime().String(),
 		EncryptionAlgorithm: algorithm,

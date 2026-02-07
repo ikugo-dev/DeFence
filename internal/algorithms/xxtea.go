@@ -12,16 +12,16 @@ func mx(y, z, sum, p, e uint32, key []uint32) uint32 {
 
 func encryptXXTEA(data []byte, key []byte) ([]byte, error) {
 	if len(data)%4 != 0 {
-		return nil, fmt.Errorf("data length must be multiple of 4 bytes")
+		return nil, fmt.Errorf("data length must be multiple of 4 bytes, %d", len(data))
 	}
 	if len(data)/4 < 2 {
-		return nil, fmt.Errorf("data must contain at least two uint32 words")
+		return nil, fmt.Errorf("data must contain at least two uint32 words, %d", len(data))
 	}
 	if len(data) < MinDataSize {
-		return nil, fmt.Errorf("invalid data size")
+		return nil, fmt.Errorf("invalid data size, %d", len(data))
 	}
 	if len(key) != KeySize {
-		return nil, fmt.Errorf("invalid key size")
+		return nil, fmt.Errorf("invalid key size, %d", len(key))
 	}
 
 	v, err := bytesToUint32s(data)

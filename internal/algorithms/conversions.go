@@ -3,6 +3,7 @@ package algorithms
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 )
@@ -36,7 +37,7 @@ func uint32ToBytes(u []uint32) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func KeyStringToBigEndianBytes(s string) []byte {
+func KeyStringTo4Bytes(s string) []byte {
 	n, err := strconv.Atoi(s)
 	if err != nil || n <= 1 {
 		return nil
@@ -45,4 +46,35 @@ func KeyStringToBigEndianBytes(s string) []byte {
 	buf := make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, uint32(n))
 	return buf
+}
+
+func KeyHexStringTo16Bytes(s string) ([]byte, error) {
+	if len(s) >= 2 && (s[:2] == "0x" || s[:2] == "0X") {
+		s = s[2:]
+	}
+
+	if len(s) == 0 {
+		return nil, fmt.Errorf("hex string is empty")
+	}
+	if len(s)%2 != 0 {
+		return nil, fmt.Errorf("hex string must have even length")
+	}
+	if len(s) > 32 {
+		return nil, fmt.Errorf("hex string too long, %d", len(s))
+	}
+
+	if len(s) < KeySize*2 {
+		pad := make([]byte, (KeySize*2)-len(s))
+		for i := range pad {
+			pad[i] = '0'
+		}
+		s = string(pad) + s
+	}
+
+	buf := make([]byte, KeySize)
+	if _, err := hex.Decode(buf, []byte(s)); err != nil {
+		return nil, fmt.Errorf("invalid hex string: %w", err)
+	}
+
+	return buf, nil
 }

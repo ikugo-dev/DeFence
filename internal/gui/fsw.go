@@ -22,8 +22,7 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 		showDirectoryPicker(window, dirEntry, dirLabel)
 	})
 
-	// Create shared crypto UI components (no operation radio needed - always encrypts)
-	cryptoUI := CreateCryptoUIComponents(false)
+	cryptoUI := CreateCryptoUIComponents(false) // false = no operation radio (always encrypts)
 
 	statusLabel := widget.NewLabel("Status: Stopped")
 	startBtn := widget.NewButton("Start Watching", nil)
@@ -44,10 +43,11 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 			return
 		}
 
-		config := cryptoUI.GetConfig()
+		algorithm := cryptoUI.GetAlgorithm()
+		key := cryptoUI.GetKey()
 
 		state.watchDir = dirEntry.Text
-		state.watcherCancel = fsw.InitWatch(dirEntry.Text, config.Key, config.Algorithm)
+		state.watcherCancel = fsw.InitWatch(dirEntry.Text, key, algorithm)
 		state.isWatching = true
 
 		statusLabel.SetText("Status: Watching " + dirEntry.Text)

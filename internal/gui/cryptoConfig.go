@@ -12,12 +12,6 @@ import (
 	"github.com/ikugo-dev/DeFence/internal/logger"
 )
 
-type CryptoConfig struct {
-	Algorithm string
-	Key       []byte
-	Operation string // "Encrypt" | "Decrypt"
-}
-
 type CryptoUIComponents struct {
 	AlgorithmSelect *widget.Select
 	KeyEntry        *widget.Entry
@@ -42,17 +36,32 @@ func CreateCryptoUIComponents(includeOperation bool) *CryptoUIComponents {
 	return components
 }
 
-func (c *CryptoUIComponents) GetConfig() CryptoConfig {
-	config := CryptoConfig{
-		Algorithm: c.AlgorithmSelect.Selected,
-		Key:       algorithms.KeyStringToBigEndianBytes(c.KeyEntry.Text),
-	}
+// GetKey returns the appropriate key bytes for the selected algorithm
+func (c *CryptoUIComponents) GetKey() []byte {
+	algorithm := c.AlgorithmSelect.Selected
+	keyText := c.KeyEntry.Text
 
+	switch algorithm {
+	case "Railfence":
+		return algorithms.KeyStringTo4Bytes(keyText)
+	case "XXTEA", "CBC":
+		key, _ := algorithms.KeyHexStringTo16Bytes(keyText)
+		//TODO handle errors
+		return key
+	default:
+		return algorithms.KeyStringTo4Bytes(keyText)
+	}
+}
+
+func (c *CryptoUIComponents) GetAlgorithm() string {
+	return c.AlgorithmSelect.Selected
+}
+
+func (c *CryptoUIComponents) GetOperation() string {
 	if c.OperationRadio != nil {
-		config.Operation = c.OperationRadio.Selected
+		return c.OperationRadio.Selected
 	}
-
-	return config
+	return ""
 }
 
 func (c *CryptoUIComponents) ValidateKey() error {
@@ -80,23 +89,24 @@ func CreateCryptoUISection(components *CryptoUIComponents) *fyne.Container {
 	return section
 }
 
-func ProcessAndSaveFile(inputPath string, outputPath string, config CryptoConfig) error {
+// ProcessAndSaveFile encrypts or decrypts a file and saves it to the specified output path
+func ProcessAndSaveFile(inputPath, outputPath, operation string, key []byte, algorithm string) error {
 	var data []byte
 	var err error
 
-	switch config.Operation {
+	switch operation {
 	case "Encrypt":
-		data, err = algorithms.EncryptFile(inputPath, config.Key, config.Algorithm)
+		data, err = algorithms.EncryptFile(inputPath, key, algorithm)
 		if err != nil {
 			return fmt.Errorf("encryption failed: %w", err)
 		}
 	case "Decrypt":
-		data, err = algorithms.DecryptFile(inputPath, config.Key)
+		data, err = algorithms.DecryptFile(inputPath, key)
 		if err != nil {
 			return fmt.Errorf("decryption failed: %w", err)
 		}
 	default:
-		return fmt.Errorf("invalid operation: %s", config.Operation)
+		return fmt.Errorf("invalid operation: %s", operation)
 	}
 
 	if err := os.WriteFile(outputPath, data, 0644); err != nil {
@@ -104,25 +114,7 @@ func ProcessAndSaveFile(inputPath string, outputPath string, config CryptoConfig
 	}
 
 	logger.Log("%sed %s -> %s (Algorithm: %s)",
-		config.Operation,
-		filepath.Base(inputPath),
-		filepath.Base(outputPath),
-		config.Algorithm)
-
-	return nil
-}
-
-func EncryptAndSave(inputPath string, outputPath string, key []byte, algorithm string) error {
-	data, err := algorithms.EncryptFile(inputPath, key, algorithm)
-	if err != nil {
-		return fmt.Errorf("encryption failed: %w", err)
-	}
-
-	if err := os.WriteFile(outputPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write encrypted file: %w", err)
-	}
-
-	logger.Log("encrypted %s -> %s (Algorithm: %s)",
+		operation,
 		filepath.Base(inputPath),
 		filepath.Base(outputPath),
 		algorithm)
@@ -130,24 +122,39 @@ func EncryptAndSave(inputPath string, outputPath string, key []byte, algorithm s
 	return nil
 }
 
-func DecryptAndSave(data []byte, outputPath string, key []byte) error {
-	decrypted, err := algorithms.DecryptFileData(data, key)
-	if err != nil {
-		return fmt.Errorf("decryption failed: %w", err)
+// ProcessAndSaveData encrypts or decrypts data and saves it to the specified output path
+func ProcessAndSaveData(data []byte, outputPath, operation string, key []byte, algorithm string) error {
+	var processedData []byte
+	var err error
+
+	switch operation {
+	case "Encrypt":
+		processedData, err = algorithms.EncryptRawData(data, key, algorithm)
+		if err != nil {
+			return fmt.Errorf("encryption failed: %w", err)
+		}
+	case "Decrypt":
+		processedData, err = algorithms.DecryptFileData(data, key)
+		if err != nil {
+			return fmt.Errorf("decryption failed: %w", err)
+		}
+	default:
+		return fmt.Errorf("invalid operation: %s", operation)
 	}
 
-	if err := os.WriteFile(outputPath, decrypted, 0644); err != nil {
-		return fmt.Errorf("failed to write decrypted file: %w", err)
+	if err := os.WriteFile(outputPath, processedData, 0644); err != nil {
+		return fmt.Errorf("failed to write output file: %w", err)
 	}
 
-	logger.Log("decrypted and saved to %s (%d bytes)", outputPath, len(decrypted))
+	logger.Log("%sed data and saved to %s (%d bytes)",
+		operation, outputPath, len(processedData))
 
 	return nil
 }
 
+// DetermineOutputPath generates an output path based on input and operation
 func DetermineOutputPath(inputPath, customOutput, operation string) string {
 	if operation == "Encrypt" {
-		// Encryption: add .enc extension
 		if customOutput != "" {
 			return customOutput + ".enc"
 		}
@@ -159,7 +166,7 @@ func DetermineOutputPath(inputPath, customOutput, operation string) string {
 	}
 
 	if filepath.Ext(inputPath) == ".enc" {
-		return inputPath[:len(inputPath)-4] // Remove .enc
+		return inputPath[:len(inputPath)-4]
 	}
 	return inputPath + ".dec"
 }

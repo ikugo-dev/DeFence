@@ -20,7 +20,6 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 		showFilePicker(window, &selectedFile, fileLabel)
 	})
 
-	// Create shared crypto UI components
 	cryptoUI := CreateCryptoUIComponents(true) // true = include operation radio
 
 	selectOutputBtn := widget.NewButton("Choose Output Location", func() {
@@ -37,15 +36,17 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 			return
 		}
 
-		config := cryptoUI.GetConfig()
-		output := DetermineOutputPath(selectedFile, outputFile, config.Operation)
+		operation := cryptoUI.GetOperation()
+		algorithm := cryptoUI.GetAlgorithm()
+		key := cryptoUI.GetKey()
+		output := DetermineOutputPath(selectedFile, outputFile, operation)
 
 		progress := dialog.NewProgressInfinite("Processing", 
-			fmt.Sprintf("%sing file with %s...", config.Operation, config.Algorithm), window)
+			fmt.Sprintf("%sing file with %s...", operation, algorithm), window)
 		progress.Show()
 
 		go func() {
-			err := ProcessAndSaveFile(selectedFile, output, config)
+			err := ProcessAndSaveFile(selectedFile, output, operation, key, algorithm)
 			
 			fyne.Do(func() {
 				progress.Hide()
@@ -55,10 +56,10 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 				}
 				dialog.ShowInformation("Success", 
 					fmt.Sprintf("%sed file: %s → %s successfully (Algorithm: %s)", 
-						config.Operation, 
+						operation, 
 						filepath.Base(selectedFile), 
 						filepath.Base(output), 
-						config.Algorithm), 
+						algorithm), 
 					window)
 			})
 		}()

@@ -23,8 +23,7 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 	saveDir := "./received_files/"
 	saveDirLabel := widget.NewLabel("Save to: " + saveDir)
 
-	// Create shared crypto UI components (no operation radio - always decrypts)
-	cryptoUI := CreateCryptoUIComponents(false)
+	cryptoUI := CreateCryptoUIComponents(false) // false = no operation radio (always decrypts)
 
 	selectDirBtn := widget.NewButton("Choose Save Directory", func() {
 		currentDir := getCurrentDirectory()
@@ -78,7 +77,7 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 			return
 		}
 
-		config := cryptoUI.GetConfig()
+		key := cryptoUI.GetKey()
 
 		dataCh := make(chan []byte)
 		go func() {
@@ -87,7 +86,7 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 				logger.LogWithDialog(window, "Error", "Error while trying to listen: %s", err)
 			}
 		}()
-
+		
 		go func() {
 			allData := tcpsocket.CollectAll(dataCh)
 
@@ -96,14 +95,14 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 			outputPath := filepath.Join(saveDir, fmt.Sprintf("received_%s.dec", timestamp))
 
 			// Decrypt and save the file
-			err := DecryptAndSave(allData, outputPath, config.Key)
+			err := ProcessAndSaveData(allData, outputPath, "Decrypt", key, "")
 			if err != nil {
 				logger.LogWithDialog(window, "Error", "Decrypting failed: %v", err)
 				return
 			}
-
-			logger.LogWithDialog(window, "Success",
-				"Received and decrypted file successfully!\nSaved to: %s\nSize: %d bytes",
+			
+			logger.LogWithDialog(window, "Success", 
+				"Received and decrypted file successfully!\nSaved to: %s\nSize: %d bytes", 
 				outputPath, len(allData))
 		}()
 

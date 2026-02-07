@@ -1,9 +1,9 @@
 package algorithms
 
 import (
+	"encoding/binary"
 	"fmt"
 	"os"
-	"unsafe"
 
 	"github.com/ikugo-dev/DeFence/internal/metadata"
 )
@@ -16,8 +16,8 @@ func EncryptFile(fileName string, key []byte, algorithm string) ([]byte, error) 
 	return EncryptFileData(fileName, fileData, key, algorithm)
 }
 
-func EncryptFileData(fileName string, data, key []byte, algorithm string) ([]byte, error) {
-	encryptedData, err := EncryptRawData(data, key, algorithm)
+func EncryptFileData(fileName string, fileData, key []byte, algorithm string) ([]byte, error) {
+	encryptedData, err := EncryptRawData(fileData, key, algorithm)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read file: %s", err)
 	}
@@ -47,8 +47,9 @@ func DecryptFile(fileName string, key []byte) ([]byte, error) {
 }
 
 func DecryptFileData(data []byte, key []byte) ([]byte, error) {
+	metadataLen := binary.BigEndian.Uint32(data[:4])
 	metadata := metadata.Read(data)
-	encryptedData := data[4+unsafe.Sizeof(metadata):]
+	encryptedData := data[4+metadataLen:]
 
 	hashedData := TigerHash(encryptedData)
 	if hashedData != metadata.HashingResult {
