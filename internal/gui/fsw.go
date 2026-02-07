@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"github.com/ikugo-dev/DeFence/internal/algorithms"
 	"github.com/ikugo-dev/DeFence/internal/fsw"
 	"github.com/ikugo-dev/DeFence/internal/logger"
 )
@@ -23,13 +22,8 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 		showDirectoryPicker(window, dirEntry, dirLabel)
 	})
 
-	algorithmSelect := widget.NewSelect([]string{"Railfence", "XXTEA", "CBC"}, nil)
-
-	algorithmSelect.SetSelected("Railfence")
-
-	keyEntry := widget.NewEntry()
-	keyEntry.SetPlaceHolder("Enter encryption key")
-	keyEntry.Password = true
+	// Create shared crypto UI components (no operation radio needed - always encrypts)
+	cryptoUI := CreateCryptoUIComponents(false)
 
 	statusLabel := widget.NewLabel("Status: Stopped")
 	startBtn := widget.NewButton("Start Watching", nil)
@@ -45,16 +39,15 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 			dialog.ShowInformation("Already Watching", "Directory watcher is already running", window)
 			return
 		}
-		if keyEntry.Text == "" {
-			dialog.ShowError(fmt.Errorf("Please enter a key"), window)
+		if err := cryptoUI.ValidateKey(); err != nil {
+			dialog.ShowError(err, window)
 			return
 		}
 
-		key := algorithms.KeyStringToBigEndianBytes(keyEntry.Text)
-		algorithm := algorithmSelect.Selected
+		config := cryptoUI.GetConfig()
 
 		state.watchDir = dirEntry.Text
-		state.watcherCancel = fsw.InitWatch(dirEntry.Text, key, algorithm)
+		state.watcherCancel = fsw.InitWatch(dirEntry.Text, config.Key, config.Algorithm)
 		state.isWatching = true
 
 		statusLabel.SetText("Status: Watching " + dirEntry.Text)
@@ -81,11 +74,7 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 		widget.NewLabel("Directory Selection:"),
 		container.NewBorder(nil, nil, nil, selectBtn, dirEntry),
 		dirLabel,
-		widget.NewSeparator(),
-		widget.NewLabel("Select Algorithm:"),
-		algorithmSelect,
-		widget.NewLabel("Encryption / Decryption Key:"),
-		keyEntry,
+		CreateCryptoUISection(cryptoUI),
 		widget.NewSeparator(),
 		statusLabel,
 		container.NewHBox(startBtn, stopBtn),

@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"fyne.io/fyne/v2"
@@ -15,8 +16,10 @@ import (
 )
 
 func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObject {
-	var selectedFile string
+	var selectedFile, outputFile string
 	fileLabel := widget.NewLabel("No file selected")
+	outputLabel := widget.NewLabel("No output location selected (file will be sent but not saved locally)")
+
 	selectFileBtn := widget.NewButton("Select File to Send", func() {
 		showFilePicker(window, &selectedFile, fileLabel)
 	})
@@ -28,12 +31,12 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 	portEntry.SetPlaceHolder("Port (e.g., 8080)")
 	portEntry.SetText("8080")
 
-	algorithmSelect := widget.NewSelect([]string{"Railfence", "XXTEA", "CBC"}, nil)
-	algorithmSelect.SetSelected("Railfence")
+	// Create shared crypto UI components (no operation radio - always encrypts)
+	cryptoUI := CreateCryptoUIComponents(false)
 
-	keyEntry := widget.NewEntry()
-	keyEntry.SetPlaceHolder("Enter encryption key")
-	keyEntry.Password = true
+	selectOutputBtn := widget.NewButton("Save Encrypted Copy Locally (Optional)", func() {
+		showSaveFilePicker(window, &outputFile, outputLabel)
+	})
 
 	sendBtn := widget.NewButton("Send File", func() {
 		if selectedFile == "" {
@@ -48,33 +51,58 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 			dialog.ShowError(fmt.Errorf("please enter port number"), window)
 			return
 		}
-		if keyEntry.Text == "" {
-			dialog.ShowError(fmt.Errorf("Please enter a key"), window)
+		if err := cryptoUI.ValidateKey(); err != nil {
+			dialog.ShowError(err, window)
 			return
 		}
 
 		address := ipEntry.Text
 		port := portEntry.Text
-		algorithm := algorithmSelect.Selected
-		key := algorithms.KeyStringToBigEndianBytes(keyEntry.Text)
+		config := cryptoUI.GetConfig()
 
 		progress := dialog.NewProgressInfinite("Sending", "Encrypting and sending file...", window)
 		progress.Show()
 
 		go func() {
-			encryptedData, err := algorithms.EncryptFile(selectedFile, key, algorithm)
+			// Encrypt the file
+			encryptedData, err := algorithms.EncryptFile(selectedFile, config.Key, config.Algorithm)
+			if err != nil {
+				fyne.Do(func() {
+					progress.Hide()
+					dialog.ShowError(fmt.Errorf("encryption failed: %s", err), window)
+				})
+				return
+			}
+
+			// Optionally save encrypted copy locally
+			var output string
+			if outputFile != "" {
+				output = outputFile + ".enc"
+				if err := os.WriteFile(output, encryptedData, 0644); err != nil {
+					logger.Log("Warning: failed to save encrypted copy: %s", err)
+				} else {
+					logger.Log("Saved encrypted copy to: %s", output)
+				}
+			}
+
+			// Send the file
+			err = tcpsocket.SendFile(address, port, encryptedData)
+
 			fyne.Do(func() {
-				if err != nil {
-					logger.LogWithDialog(window, "Error", "Error while encrypting: %s", err)
-					return
-				}
 				progress.Hide()
-				err = tcpsocket.SendFile(address, port, encryptedData)
 				if err != nil {
-					logger.LogWithDialog(window, "Error", "Failed to send file: %v", err.Error())
+					dialog.ShowError(fmt.Errorf("failed to send file: %v", err), window)
 					return
 				}
-				logger.LogWithDialog(window, "Success", "Sent file %s to %s successfully (Algorithm: %s)", filepath.Base(selectedFile), port, algorithm)
+
+				msg := fmt.Sprintf("Sent file %s to %s:%s successfully (Algorithm: %s)",
+					filepath.Base(selectedFile), address, port, config.Algorithm)
+
+				if outputFile != "" {
+					msg += fmt.Sprintf("\nEncrypted copy saved to: %s", filepath.Base(output))
+				}
+
+				dialog.ShowInformation("Success", msg, window)
 			})
 		}()
 	})
@@ -88,11 +116,10 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 		widget.NewLabel("Recipient Details:"),
 		ipEntry,
 		portEntry,
+		CreateCryptoUISection(cryptoUI),
 		widget.NewSeparator(),
-		widget.NewLabel("Select Algorithm:"),
-		algorithmSelect,
-		widget.NewLabel("Encryption / Decryption Key:"),
-		keyEntry,
+		selectOutputBtn,
+		outputLabel,
 		widget.NewSeparator(),
 		layout.NewSpacer(),
 		sendBtn,

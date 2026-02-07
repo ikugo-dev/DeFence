@@ -9,8 +9,6 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"github.com/ikugo-dev/DeFence/internal/algorithms"
-	"github.com/ikugo-dev/DeFence/internal/logger"
 )
 
 func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject {
@@ -22,15 +20,8 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 		showFilePicker(window, &selectedFile, fileLabel)
 	})
 
-	algorithmSelect := widget.NewSelect([]string{"Railfence", "XXTEA", "CBC"}, nil)
-	algorithmSelect.SetSelected("Railfence")
-
-	keyEntry := widget.NewEntry()
-	keyEntry.SetPlaceHolder("Enter encryption key")
-	keyEntry.Password = true
-
-	operationRadio := widget.NewRadioGroup([]string{"Encrypt", "Decrypt"}, nil)
-	operationRadio.SetSelected("Encrypt")
+	// Create shared crypto UI components
+	cryptoUI := CreateCryptoUIComponents(true) // true = include operation radio
 
 	selectOutputBtn := widget.NewButton("Choose Output Location", func() {
 		showSaveFilePicker(window, &outputFile, outputLabel)
@@ -38,40 +29,37 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 
 	processBtn := widget.NewButton("Process File", func() {
 		if selectedFile == "" {
-			dialog.ShowError(fmt.Errorf("Please select a file first"), window)
+			dialog.ShowError(fmt.Errorf("please select a file first"), window)
 			return
 		}
-		if keyEntry.Text == "" {
-			dialog.ShowError(fmt.Errorf("Please enter a key"), window)
+		if err := cryptoUI.ValidateKey(); err != nil {
+			dialog.ShowError(err, window)
 			return
 		}
 
-		operation := operationRadio.Selected
-		algorithm := algorithmSelect.Selected
-		key := algorithms.KeyStringToBigEndianBytes(keyEntry.Text)
-		output := determineOutputPath(selectedFile, outputFile, operation)
+		config := cryptoUI.GetConfig()
+		output := DetermineOutputPath(selectedFile, outputFile, config.Operation)
 
-		progress := dialog.NewProgressInfinite("Processing", fmt.Sprintf("%sing file with %s...", operation, algorithm), window)
+		progress := dialog.NewProgressInfinite("Processing", 
+			fmt.Sprintf("%sing file with %s...", config.Operation, config.Algorithm), window)
 		progress.Show()
 
 		go func() {
-
-			switch operation {
-			case "Encrypt":
-				_, err := algorithms.EncryptFile(selectedFile, key, algorithm)
-				if err != nil {
-					logger.LogWithDialog(window, "Error", "Error while encrypting: %s", err)
-				}
-			case "Decrypt":
-				_, err := algorithms.DecryptFile(selectedFile, key)
-				if err != nil {
-					logger.LogWithDialog(window, "Error", "Error while decrypting: %s", err)
-				}
-			}
-
+			err := ProcessAndSaveFile(selectedFile, output, config)
+			
 			fyne.Do(func() {
 				progress.Hide()
-				logger.LogWithDialog(window, "Success", "%sed file: %s → %s successfully. (Algorithm: %s)", operation, filepath.Base(selectedFile), filepath.Base(output), algorithm)
+				if err != nil {
+					dialog.ShowError(fmt.Errorf("error while processing: %s", err), window)
+					return
+				}
+				dialog.ShowInformation("Success", 
+					fmt.Sprintf("%sed file: %s → %s successfully (Algorithm: %s)", 
+						config.Operation, 
+						filepath.Base(selectedFile), 
+						filepath.Base(output), 
+						config.Algorithm), 
+					window)
 			})
 		}()
 	})
@@ -81,14 +69,7 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 		widget.NewSeparator(),
 		selectFileBtn,
 		fileLabel,
-		widget.NewSeparator(),
-		widget.NewLabel("Select Algorithm:"),
-		algorithmSelect,
-		widget.NewLabel("Encryption / Decryption Key:"),
-		keyEntry,
-		widget.NewSeparator(),
-		widget.NewLabel("Select Operation:"),
-		operationRadio,
+		CreateCryptoUISection(cryptoUI),
 		widget.NewSeparator(),
 		selectOutputBtn,
 		outputLabel,
@@ -96,18 +77,4 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 		layout.NewSpacer(),
 		processBtn,
 	)
-}
-
-func determineOutputPath(selectedFile, outputFile, operation string) string {
-	if outputFile != "" {
-		if operation == "Encrypt" {
-			return outputFile + ".enc"
-		}
-		return outputFile + ".dec"
-	}
-
-	if operation == "Encrypt" {
-		return selectedFile + ".enc"
-	}
-	return selectedFile + ".dec"
 }

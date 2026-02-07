@@ -2,6 +2,8 @@ package gui
 
 import (
 	"fmt"
+	"path/filepath"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -9,7 +11,6 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
-	"github.com/ikugo-dev/DeFence/internal/algorithms"
 	"github.com/ikugo-dev/DeFence/internal/logger"
 	"github.com/ikugo-dev/DeFence/internal/tcpsocket"
 )
@@ -22,9 +23,8 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 	saveDir := "./received_files/"
 	saveDirLabel := widget.NewLabel("Save to: " + saveDir)
 
-	keyEntry := widget.NewEntry()
-	keyEntry.SetPlaceHolder("Enter encryption key")
-	keyEntry.Password = true
+	// Create shared crypto UI components (no operation radio - always decrypts)
+	cryptoUI := CreateCryptoUIComponents(false)
 
 	selectDirBtn := widget.NewButton("Choose Save Directory", func() {
 		currentDir := getCurrentDirectory()
@@ -73,30 +73,41 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 	stopBtn.Disable()
 
 	startBtn.OnTapped = func() {
-		if keyEntry.Text == "" {
-			dialog.ShowError(fmt.Errorf("Please enter a key"), window)
+		if err := cryptoUI.ValidateKey(); err != nil {
+			dialog.ShowError(err, window)
 			return
 		}
-		key := algorithms.KeyStringToBigEndianBytes(keyEntry.Text)
+
+		config := cryptoUI.GetConfig()
 
 		dataCh := make(chan []byte)
 		go func() {
 			err := tcpsocket.StartListening(portEntry.Text, dataCh)
 			if err != nil {
-				logger.LogWithDialog(window, "Error", "Error while trying to listen; %s", err)
+				logger.LogWithDialog(window, "Error", "Error while trying to listen: %s", err)
 			}
 		}()
+
 		go func() {
 			allData := tcpsocket.CollectAll(dataCh)
 
-			decrypted, err := algorithms.DecryptFileData(allData, key)
+			// Generate output filename with timestamp
+			timestamp := time.Now().Format("20060102_150405")
+			outputPath := filepath.Join(saveDir, fmt.Sprintf("received_%s.dec", timestamp))
+
+			// Decrypt and save the file
+			err := DecryptAndSave(allData, outputPath, config.Key)
 			if err != nil {
 				logger.LogWithDialog(window, "Error", "Decrypting failed: %v", err)
 				return
 			}
-			logger.LogWithDialog(window, "Success", "Received %d bytes total", len(decrypted))
+
+			logger.LogWithDialog(window, "Success",
+				"Received and decrypted file successfully!\nSaved to: %s\nSize: %d bytes",
+				outputPath, len(allData))
 		}()
 
+		statusLabel.SetText("Status: Listening on port " + portEntry.Text)
 		startBtn.Disable()
 		stopBtn.Enable()
 		portEntry.Disable()
@@ -124,9 +135,7 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 		widget.NewSeparator(),
 		selectDirBtn,
 		saveDirLabel,
-		widget.NewSeparator(),
-		widget.NewLabel("Encryption / Decryption Key:"),
-		keyEntry,
+		CreateCryptoUISection(cryptoUI),
 		widget.NewSeparator(),
 		statusLabel,
 		container.NewHBox(startBtn, stopBtn),
