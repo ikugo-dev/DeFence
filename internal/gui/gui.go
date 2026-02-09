@@ -16,7 +16,7 @@ type AppState struct {
 
 func Start() {
 	myApp := app.NewWithID("DeFence")
-	myWindow := myApp.NewWindow("File Encryption/Decryption Tool")
+	myWindow := myApp.NewWindow("DeFence")
 	myWindow.Resize(fyne.NewSize(800, 600))
 
 	state := &AppState{}
