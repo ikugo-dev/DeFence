@@ -25,6 +25,7 @@ go build cmd/defence/main.go
 ## Features
 
 - Single file encrpytion and decryption
-- A filesystem monitor that automatically encrpyts files that enter the project folder; the output is on `./X/`
+- A filesystem monitor that automatically encrpyts files that enter the project folder
+    the output is on `./X/`
 - TCP websocket connections to transfer files to known IP's that are listening
 
