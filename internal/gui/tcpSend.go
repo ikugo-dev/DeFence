@@ -15,7 +15,7 @@ import (
 	"github.com/ikugo-dev/DeFence/internal/tcpsocket"
 )
 
-func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObject {
+func createSendFileSection(window fyne.Window) fyne.CanvasObject {
 	var selectedFile, outputFile string
 	fileLabel := widget.NewLabel("No file selected")
 	outputLabel := widget.NewLabel("No output location selected (file will be sent but not saved locally)")
@@ -31,7 +31,7 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 	portEntry.SetPlaceHolder("Port (e.g., 8080)")
 	portEntry.SetText("8080")
 
-	cryptoUI := CreateCryptoUIComponents(false) // false = no operation radio (always encrypts)
+	cryptoUI := CreateCryptoUIComponents(false)
 
 	selectOutputBtn := widget.NewButton("Save Encrypted Copy Locally (Optional)", func() {
 		showSaveFilePicker(window, &outputFile, outputLabel)
@@ -64,7 +64,6 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 		progress.Show()
 
 		go func() {
-			// Encrypt the file
 			encryptedData, err := algorithms.EncryptFile(selectedFile, key, algorithm)
 			if err != nil {
 				fyne.Do(func() {
@@ -74,10 +73,9 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 				return
 			}
 
-			// Optionally save encrypted copy locally
 			var output string
 			if outputFile != "" {
-				output = outputFile + ".enc"
+				output = encryptOutputPath(outputFile, "")
 				if err := os.WriteFile(output, encryptedData, 0644); err != nil {
 					logger.Log("Warning: failed to save encrypted copy: %s", err)
 				} else {
@@ -85,23 +83,22 @@ func createSendFileSection(window fyne.Window, state *AppState) fyne.CanvasObjec
 				}
 			}
 
-			// Send the file
 			err = tcpsocket.SendFile(address, port, encryptedData)
-			
+
 			fyne.Do(func() {
 				progress.Hide()
 				if err != nil {
 					dialog.ShowError(fmt.Errorf("failed to send file: %v", err), window)
 					return
 				}
-				
-				msg := fmt.Sprintf("Sent file %s to %s:%s successfully (Algorithm: %s)", 
+
+				msg := fmt.Sprintf("Sent file %s to %s:%s successfully (Algorithm: %s)",
 					filepath.Base(selectedFile), address, port, algorithm)
-				
+
 				if outputFile != "" {
 					msg += fmt.Sprintf("\nEncrypted copy saved to: %s", filepath.Base(output))
 				}
-				
+
 				dialog.ShowInformation("Success", msg, window)
 			})
 		}()

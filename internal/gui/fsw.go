@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"context"
 	"fmt"
 
 	"fyne.io/fyne/v2"
@@ -12,7 +13,13 @@ import (
 	"github.com/ikugo-dev/DeFence/internal/logger"
 )
 
-func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
+var (
+	watcherCancel context.CancelFunc
+	isWatching    bool
+	watchDir      string
+)
+
+func createWatcherTab(window fyne.Window) fyne.CanvasObject {
 	dirEntry := widget.NewEntry()
 	dirEntry.SetPlaceHolder("Enter directory path...")
 	dirEntry.Text = getCurrentDirectory()
@@ -34,7 +41,7 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 			dialog.ShowError(fmt.Errorf("please select a directory first"), window)
 			return
 		}
-		if state.isWatching {
+		if isWatching {
 			dialog.ShowInformation("Already Watching", "Directory watcher is already running", window)
 			return
 		}
@@ -46,9 +53,9 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 		algorithm := cryptoUI.GetAlgorithm()
 		key := cryptoUI.GetKey()
 
-		state.watchDir = dirEntry.Text
-		state.watcherCancel = fsw.InitWatch(dirEntry.Text, key, algorithm)
-		state.isWatching = true
+		watchDir = dirEntry.Text
+		watcherCancel = fsw.InitWatch(dirEntry.Text, key, algorithm)
+		isWatching = true
 
 		statusLabel.SetText("Status: Watching " + dirEntry.Text)
 		startBtn.Disable()
@@ -57,12 +64,12 @@ func createWatcherTab(window fyne.Window, state *AppState) fyne.CanvasObject {
 	}
 
 	stopBtn.OnTapped = func() {
-		if state.isWatching {
-			if state.watcherCancel != nil {
-				state.watcherCancel()
-				state.watcherCancel = nil
+		if isWatching {
+			if watcherCancel != nil {
+				watcherCancel()
+				watcherCancel = nil
 			}
-			state.isWatching = false
+			isWatching = false
 			statusLabel.SetText("Status: Stopped")
 			startBtn.Enable()
 			stopBtn.Disable()

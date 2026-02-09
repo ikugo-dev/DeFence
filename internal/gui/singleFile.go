@@ -11,7 +11,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject {
+func createSingleFileTab(window fyne.Window) fyne.CanvasObject {
 	var selectedFile, outputFile string
 	fileLabel := widget.NewLabel("No file selected")
 	outputLabel := widget.NewLabel("Output: Same directory as input file")
@@ -20,7 +20,7 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 		showFilePicker(window, &selectedFile, fileLabel)
 	})
 
-	cryptoUI := CreateCryptoUIComponents(true) // true = include operation radio
+	cryptoUI := CreateCryptoUIComponents(true)
 
 	selectOutputBtn := widget.NewButton("Choose Output Location", func() {
 		showSaveFilePicker(window, &outputFile, outputLabel)
@@ -39,27 +39,27 @@ func createSingleFileTab(window fyne.Window, state *AppState) fyne.CanvasObject 
 		operation := cryptoUI.GetOperation()
 		algorithm := cryptoUI.GetAlgorithm()
 		key := cryptoUI.GetKey()
-		output := DetermineOutputPath(selectedFile, outputFile, operation)
+		output := determineOutputPath(selectedFile, outputFile, operation)
 
-		progress := dialog.NewProgressInfinite("Processing", 
+		progress := dialog.NewProgressInfinite("Processing",
 			fmt.Sprintf("%sing file with %s...", operation, algorithm), window)
 		progress.Show()
 
 		go func() {
 			err := ProcessAndSaveFile(selectedFile, output, operation, key, algorithm)
-			
+
 			fyne.Do(func() {
 				progress.Hide()
 				if err != nil {
 					dialog.ShowError(fmt.Errorf("error while processing: %s", err), window)
 					return
 				}
-				dialog.ShowInformation("Success", 
-					fmt.Sprintf("%sed file: %s → %s successfully (Algorithm: %s)", 
-						operation, 
-						filepath.Base(selectedFile), 
-						filepath.Base(output), 
-						algorithm), 
+				dialog.ShowInformation("Success",
+					fmt.Sprintf("%sed file: %s → %s successfully (Algorithm: %s)",
+						operation,
+						filepath.Base(selectedFile),
+						filepath.Base(output),
+						algorithm),
 					window)
 			})
 		}()

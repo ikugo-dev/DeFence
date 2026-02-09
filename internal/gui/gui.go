@@ -1,32 +1,22 @@
 package gui
 
 import (
-	"context"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 )
-
-type AppState struct {
-	watcherCancel context.CancelFunc
-	isWatching    bool
-	watchDir      string
-}
 
 func Start() {
 	myApp := app.NewWithID("DeFence")
 	myWindow := myApp.NewWindow("DeFence")
 	myWindow.Resize(fyne.NewSize(800, 600))
 
-	state := &AppState{}
-
 	tabs := container.NewAppTabs(
-		container.NewTabItem("Directory Watcher", createWatcherTab(myWindow, state)),
-		container.NewTabItem("Single File", createSingleFileTab(myWindow, state)),
+		container.NewTabItem("Single File", createSingleFileTab(myWindow)),
+		container.NewTabItem("Directory Watcher", createWatcherTab(myWindow)),
 		container.NewTabItem("File Transfer", container.NewAppTabs(
-			container.NewTabItem("Send File", createSendFileSection(myWindow, state)),
-			container.NewTabItem("Receive File", createReceiveFileSection(myWindow, state)),
+			container.NewTabItem("Send File", createSendFileSection(myWindow)),
+			container.NewTabItem("Receive File", createReceiveFileSection(myWindow)),
 		)),
 		container.NewTabItem("Activity Log", createActivityLogTab()),
 	)

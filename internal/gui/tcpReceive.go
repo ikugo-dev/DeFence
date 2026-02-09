@@ -1,10 +1,6 @@
 package gui
 
 import (
-	"fmt"
-	"path/filepath"
-	"time"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -15,7 +11,7 @@ import (
 	"github.com/ikugo-dev/DeFence/internal/tcpsocket"
 )
 
-func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasObject {
+func createReceiveFileSection(window fyne.Window) fyne.CanvasObject {
 	portEntry := widget.NewEntry()
 	portEntry.SetPlaceHolder("Port to listen on (e.g., 8080)")
 	portEntry.SetText("8080")
@@ -23,7 +19,7 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 	saveDir := "./received_files/"
 	saveDirLabel := widget.NewLabel("Save to: " + saveDir)
 
-	cryptoUI := CreateCryptoUIComponents(false) // false = no operation radio (always decrypts)
+	cryptoUI := CreateCryptoUIComponents(false)
 
 	selectDirBtn := widget.NewButton("Choose Save Directory", func() {
 		currentDir := getCurrentDirectory()
@@ -86,24 +82,19 @@ func createReceiveFileSection(window fyne.Window, state *AppState) fyne.CanvasOb
 				logger.LogWithDialog(window, "Error", "Error while trying to listen: %s", err)
 			}
 		}()
-		
+
 		go func() {
 			allData := tcpsocket.CollectAll(dataCh)
 
-			// Generate output filename with timestamp
-			timestamp := time.Now().Format("20060102_150405")
-			outputPath := filepath.Join(saveDir, fmt.Sprintf("received_%s.dec", timestamp))
+			outputPath := saveDir + decryptOutputPath(allData, "")
 
-			// Decrypt and save the file
 			err := ProcessAndSaveData(allData, outputPath, "Decrypt", key, "")
 			if err != nil {
 				logger.LogWithDialog(window, "Error", "Decrypting failed: %v", err)
 				return
 			}
-			
-			logger.LogWithDialog(window, "Success", 
-				"Received and decrypted file successfully!\nSaved to: %s\nSize: %d bytes", 
-				outputPath, len(allData))
+
+			logger.LogWithDialog(window, "Success", "Received and decrypted file successfully! %s", outputPath)
 		}()
 
 		statusLabel.SetText("Status: Listening on port " + portEntry.Text)

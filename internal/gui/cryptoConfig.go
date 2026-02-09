@@ -36,7 +36,6 @@ func CreateCryptoUIComponents(includeOperation bool) *CryptoUIComponents {
 	return components
 }
 
-// GetKey returns the appropriate key bytes for the selected algorithm
 func (c *CryptoUIComponents) GetKey() []byte {
 	algorithm := c.AlgorithmSelect.Selected
 	keyText := c.KeyEntry.Text
@@ -89,7 +88,6 @@ func CreateCryptoUISection(components *CryptoUIComponents) *fyne.Container {
 	return section
 }
 
-// ProcessAndSaveFile encrypts or decrypts a file and saves it to the specified output path
 func ProcessAndSaveFile(inputPath, outputPath, operation string, key []byte, algorithm string) error {
 	var data []byte
 	var err error
@@ -122,7 +120,6 @@ func ProcessAndSaveFile(inputPath, outputPath, operation string, key []byte, alg
 	return nil
 }
 
-// ProcessAndSaveData encrypts or decrypts data and saves it to the specified output path
 func ProcessAndSaveData(data []byte, outputPath, operation string, key []byte, algorithm string) error {
 	var processedData []byte
 	var err error
@@ -150,23 +147,4 @@ func ProcessAndSaveData(data []byte, outputPath, operation string, key []byte, a
 		operation, outputPath, len(processedData))
 
 	return nil
-}
-
-// DetermineOutputPath generates an output path based on input and operation
-func DetermineOutputPath(inputPath, customOutput, operation string) string {
-	if operation == "Encrypt" {
-		if customOutput != "" {
-			return customOutput + ".enc"
-		}
-		return inputPath + ".enc"
-	}
-
-	if customOutput != "" {
-		return customOutput
-	}
-
-	if filepath.Ext(inputPath) == ".enc" {
-		return inputPath[:len(inputPath)-4]
-	}
-	return inputPath + ".dec"
 }
