@@ -13,21 +13,17 @@ func encryptRailfence(text []byte, byteKey []byte) ([]byte, error) {
 	// create the matrix to cipher plain text
 	// key = rows , length(text) = columns
 	rail := make([][]byte, key)
+	filled := make([][]bool, key)
 	for i := range rail {
 		rail[i] = make([]byte, len(text))
-	}
-	// filling the rail matrix to distinguish filled
-	// spaces from blank ones
-	for i := range key {
-		for j := range text {
-			rail[i][j] = '\n'
-		}
+		// filling the rail matrix to distinguish filled
+		// spaces from blank ones
+		filled[i] = make([]bool, len(text))
 	}
 
 	// to find the direction
 	dir_down := false
-	row := 0
-	col := 0
+	row, col := 0, 0
 
 	for i := range text {
 		// check the direction of flow
@@ -39,6 +35,7 @@ func encryptRailfence(text []byte, byteKey []byte) ([]byte, error) {
 
 		// fill the corresponding alphabet
 		rail[row][col] = byte(text[i])
+		filled[row][col] = true
 		col++
 
 		// find the next row using direction flag
@@ -50,10 +47,10 @@ func encryptRailfence(text []byte, byteKey []byte) ([]byte, error) {
 	}
 
 	var result []byte
-	for _, row := range rail {
-		for _, r := range row {
-			if r != '\n' {
-				result = append(result, r)
+	for i := range rail {
+		for j := range rail[i] {
+			if filled[i][j] {
+				result = append(result, rail[i][j])
 			}
 		}
 	}
@@ -67,18 +64,14 @@ func decryptRailfence(cipher []byte, byteKey []byte) ([]byte, error) {
 	}
 
 	rail := make([][]byte, key)
+	marked := make([][]bool, key)
 	for i := range rail {
 		rail[i] = make([]byte, len(cipher))
-	}
-	for i := range key {
-		for j := range cipher {
-			rail[i][j] = '\n'
-		}
+		marked[i] = make([]bool, len(cipher))
 	}
 
 	dir_down := false
-	row := 0
-	col := 0
+	row, col := 0, 0
 
 	for range cipher {
 		// check the direction of flow
@@ -89,7 +82,7 @@ func decryptRailfence(cipher []byte, byteKey []byte) ([]byte, error) {
 			dir_down = false
 		}
 
-		rail[row][col] = '*'
+		marked[row][col] = true
 		col++
 
 		if dir_down {
@@ -102,7 +95,7 @@ func decryptRailfence(cipher []byte, byteKey []byte) ([]byte, error) {
 	index := 0
 	for i := range key {
 		for j := range cipher {
-			if rail[i][j] == '*' && index < len(cipher) {
+			if marked[i][j] {
 				rail[i][j] = cipher[index]
 				index++
 			}
@@ -110,8 +103,7 @@ func decryptRailfence(cipher []byte, byteKey []byte) ([]byte, error) {
 	}
 
 	var result []byte
-	row = 0
-	col = 0
+	row, col = 0, 0
 	for range cipher {
 		// check the direction of flow
 		if row == 0 {
@@ -122,8 +114,8 @@ func decryptRailfence(cipher []byte, byteKey []byte) ([]byte, error) {
 		}
 
 		// place the marker
-		if rail[row][col] != '*' {
-			result = append(result, (rail[row][col]))
+		if marked[row][col] {
+			result = append(result, rail[row][col])
 			col++
 		}
 
