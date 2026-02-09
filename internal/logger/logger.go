@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -13,12 +14,18 @@ import (
 var logChan chan string = make(chan string, 100)
 var logs []string = make([]string, 0)
 var mu sync.Mutex
+var logFile = "log.txt"
 
 func Log(format string, args ...any) {
 	timestamp := time.Now().Format("15:04:05")
 	message := fmt.Sprintf("[%s] %s", timestamp, fmt.Sprintf(format, args...))
 
 	mu.Lock()
+	f, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err == nil {
+		f.WriteString(message + "\n")
+		f.Close()
+	}
 	logs = append(logs, message)
 	mu.Unlock()
 
@@ -32,11 +39,15 @@ func GetLogs() string {
 	mu.Lock()
 	defer mu.Unlock()
 
-	var result strings.Builder
-	for _, log := range logs {
-		result.WriteString(log + "\n")
+	data, err := os.ReadFile(logFile)
+	if err != nil { // read session logs if file cant be read
+		var result strings.Builder
+		for _, log := range logs {
+			result.WriteString(log + "\n")
+		}
+		return result.String()
 	}
-	return result.String()
+	return string(data)
 }
 
 func Subscribe() <-chan string {

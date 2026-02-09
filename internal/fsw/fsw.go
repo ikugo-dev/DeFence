@@ -63,7 +63,6 @@ func handleFileEvent(event fsnotify.Event) {
 	if !event.Has(fsnotify.Create) {
 		return
 	}
-
 	logger.Log("file event: %s", event.String())
 
 	data, err := algorithms.EncryptFile(event.Name, encryptionKey, encryptionAlgorithm)
@@ -75,7 +74,6 @@ func handleFileEvent(event fsnotify.Event) {
 	outPath := filepath.Join("./X", filepath.Base(event.Name))
 	if err := os.WriteFile(outPath, data, 0644); err != nil {
 		logger.Log("failed to write encrypted file %s: %s", outPath, err)
-	} else {
-		logger.Log("encrypted %s -> %s", event.Name, outPath)
 	}
+	logger.Log("Encrypted %s -> %s (Algorithm: %s)", filepath.Base(event.Name), filepath.Base(outPath), encryptionAlgorithm)
 }

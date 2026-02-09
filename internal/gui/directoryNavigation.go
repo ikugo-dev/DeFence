@@ -51,6 +51,7 @@ func showFilePicker(window fyne.Window, selectedFile *string, fileLabel *widget.
 		fileLabel.SetText("Selected: " + filepath.Base(*selectedFile))
 		file.Close()
 	}, window)
+	fd.SetFilter(nil) // show everything
 
 	if listableURI != nil {
 		fd.SetLocation(listableURI)
