@@ -23,7 +23,7 @@ func TigerHash(message []byte) [24]byte {
 		// podeliti segment na 8 64-bitnih big-endian reči w[i], 0 ≤ i ≤ 7
 		var w [8]uint64
 		for j := range 8 {
-			w[j] = binary.LittleEndian.Uint64(chunk[j*8 : (j+1)*8])
+			w[j] = binary.BigEndian.Uint64(chunk[j*8 : (j+1)*8])
 		}
 
 		//Inicijalizovati heš vrednosti za jedan segment:

@@ -20,7 +20,7 @@ func determineOutputPath(inputPath, customOutput, operation string) string {
 }
 
 func encryptOutputPath(inputPath, customOutput string) string {
-	os.Remove(inputPath)
+	// os.Remove(inputPath)
 	if customOutput == "" {
 		return inputPath + ".enc"
 	}

@@ -25,7 +25,7 @@ func CreateCryptoUIComponents(includeOperation bool) *CryptoUIComponents {
 	}
 
 	components.AlgorithmSelect.SetSelected("Railfence")
-	components.KeyEntry.SetPlaceHolder("Enter encryption key")
+	components.KeyEntry.SetPlaceHolder("Enter encryption / decryption key")
 	components.KeyEntry.Password = true
 
 	if includeOperation {
