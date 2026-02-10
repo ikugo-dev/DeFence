@@ -17,7 +17,7 @@ var mu sync.Mutex
 var logFile = "log.txt"
 
 func Log(format string, args ...any) {
-	timestamp := time.Now().Format("15:04:05")
+	timestamp := time.Now().Format(time.DateTime)
 	message := fmt.Sprintf("[%s] %s", timestamp, fmt.Sprintf(format, args...))
 
 	mu.Lock()

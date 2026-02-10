@@ -35,7 +35,7 @@ func EncryptRawData(data []byte, key []byte, algorithm string) ([]byte, error) {
 	case "CBC":
 		return encryptCBC(data, key)
 	}
-	return nil, fmt.Errorf("invalid algorithm selection: %s", algorithm)
+	return nil, fmt.Errorf("Invalid algorithm selection: %s", algorithm)
 }
 
 func DecryptFile(fileName string, key []byte) ([]byte, error) {
@@ -72,5 +72,5 @@ func DecryptRawData(data []byte, key []byte, algorithm string) ([]byte, error) {
 	case "CBC":
 		return decryptCBC(data, key)
 	}
-	return nil, fmt.Errorf("invalid algorithm selection: %s", algorithm)
+	return nil, fmt.Errorf("Invalid algorithm selection: %s", algorithm)
 }

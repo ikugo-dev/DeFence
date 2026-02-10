@@ -38,7 +38,7 @@ func createWatcherTab(window fyne.Window) fyne.CanvasObject {
 
 	startBtn.OnTapped = func() {
 		if dirEntry.Text == "" {
-			dialog.ShowError(fmt.Errorf("please select a directory first"), window)
+			dialog.ShowError(fmt.Errorf("Please select a directory first"), window)
 			return
 		}
 		if isWatching {

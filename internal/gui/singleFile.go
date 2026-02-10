@@ -28,7 +28,7 @@ func createSingleFileTab(window fyne.Window) fyne.CanvasObject {
 
 	processBtn := widget.NewButton("Process File", func() {
 		if selectedFile == "" {
-			dialog.ShowError(fmt.Errorf("please select a file first"), window)
+			dialog.ShowError(fmt.Errorf("Please select a file first"), window)
 			return
 		}
 		if err := cryptoUI.ValidateKey(); err != nil {
@@ -51,7 +51,7 @@ func createSingleFileTab(window fyne.Window) fyne.CanvasObject {
 			fyne.Do(func() {
 				progress.Hide()
 				if err != nil {
-					dialog.ShowError(fmt.Errorf("error while processing: %s", err), window)
+					dialog.ShowError(fmt.Errorf("Error while processing: %s", err), window)
 					return
 				}
 				dialog.ShowInformation("Success",

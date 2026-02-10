@@ -5,13 +5,13 @@ import (
 	"fmt"
 )
 
-const BlockSize = 16
+const BlockSize = 8
 
 func encryptCBC(data []byte, key []byte) ([]byte, error) {
 	iv := make([]byte, BlockSize)
 	rand.Read(iv)
 	if len(key) != KeySize {
-		return nil, fmt.Errorf("invalid key size")
+		return nil, fmt.Errorf("Invalid key size")
 	}
 
 	data = pkcs7Pad(data)
@@ -26,7 +26,7 @@ func encryptCBC(data []byte, key []byte) ([]byte, error) {
 		xored := xorBlocks(block, prev)
 		enc, err := encryptXXTEA(xored, key)
 		if err != nil {
-			return nil, fmt.Errorf("error while encrypting XXTEA in CBC; %s", err)
+			return nil, fmt.Errorf("Error while encrypting XXTEA in CBC; %s", err)
 		}
 		out = append(out, enc...)
 		prev = enc
@@ -37,10 +37,10 @@ func encryptCBC(data []byte, key []byte) ([]byte, error) {
 
 func decryptCBC(data []byte, key []byte) ([]byte, error) {
 	if len(data) < BlockSize*2 {
-		return nil, fmt.Errorf("ciphertext too short")
+		return nil, fmt.Errorf("Ciphertext too short")
 	}
 	if len(key) != KeySize {
-		return nil, fmt.Errorf("invalid key size")
+		return nil, fmt.Errorf("Invalid key size")
 	}
 
 	iv := data[:BlockSize]
@@ -53,7 +53,7 @@ func decryptCBC(data []byte, key []byte) ([]byte, error) {
 		block := data[i : i+BlockSize]
 		dec, err := decryptXXTEA(block, key)
 		if err != nil {
-			return nil, fmt.Errorf("error while decrypting XXTEA in CBC; %s", err)
+			return nil, fmt.Errorf("Error while decrypting XXTEA in CBC; %s", err)
 		}
 		plain := xorBlocks(dec, prev)
 		out = append(out, plain...)
@@ -62,7 +62,7 @@ func decryptCBC(data []byte, key []byte) ([]byte, error) {
 
 	result, err := pkcs7Unpad(out)
 	if err != nil {
-		return nil, fmt.Errorf("error while unpadding")
+		return nil, fmt.Errorf("Error while unpadding")
 	}
 	return result, nil
 }

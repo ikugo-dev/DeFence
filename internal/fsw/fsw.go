@@ -21,13 +21,13 @@ func InitWatch(dir string, key []byte, algorithm string) context.CancelFunc {
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		logger.Log("failed to create watcher: %s", err)
+		logger.Log("Failed to create watcher: %s", err)
 		cancel()
 		return func() {}
 	}
 
 	if err := watcher.Add(dir); err != nil {
-		logger.Log("failed to watch directory: %s", err)
+		logger.Log("Failed to watch directory: %s", err)
 		cancel()
 		return func() {}
 	}
@@ -63,17 +63,17 @@ func handleFileEvent(event fsnotify.Event) {
 	if !event.Has(fsnotify.Create) {
 		return
 	}
-	logger.Log("file event: %s", event.String())
+	logger.Log("File event: %s", event.String())
 
 	data, err := algorithms.EncryptFile(event.Name, encryptionKey, encryptionAlgorithm)
 	if err != nil {
-		logger.Log("failed to encrypt file %s: %s", event.Name, err)
+		logger.Log("Failed to encrypt file %s: %s", event.Name, err)
 		return
 	}
 
 	outPath := filepath.Join("./X", filepath.Base(event.Name))
 	if err := os.WriteFile(outPath, data, 0644); err != nil {
-		logger.Log("failed to write encrypted file %s: %s", outPath, err)
+		logger.Log("Failed to write encrypted file %s: %s", outPath, err)
 	}
 	logger.Log("Encrypted %s -> %s (Algorithm: %s)", filepath.Base(event.Name), filepath.Base(outPath), encryptionAlgorithm)
 }

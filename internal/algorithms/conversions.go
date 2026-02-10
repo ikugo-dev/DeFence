@@ -10,7 +10,7 @@ import (
 
 func bytesToint(b []byte) (int, error) {
 	if len(b)%4 != 0 {
-		return 0, fmt.Errorf("invalid key size")
+		return 0, fmt.Errorf("Invalid key size")
 	}
 
 	u := binary.BigEndian.Uint32(b[0:4])
@@ -19,7 +19,7 @@ func bytesToint(b []byte) (int, error) {
 
 func bytesToUint32s(b []byte) ([]uint32, error) {
 	if len(b)%4 != 0 {
-		return nil, fmt.Errorf("invalid key size")
+		return nil, fmt.Errorf("Invalid key size")
 	}
 	u := make([]uint32, len(b)/4)
 	for i := range u {
@@ -32,7 +32,7 @@ func uint32ToBytes(u []uint32) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.BigEndian, u)
 	if err != nil {
-		return nil, fmt.Errorf("invalid key size")
+		return nil, fmt.Errorf("Invalid key size")
 	}
 	return buf.Bytes(), nil
 }
@@ -54,13 +54,13 @@ func KeyHexStringTo16Bytes(s string) ([]byte, error) {
 	}
 
 	if len(s) == 0 {
-		return nil, fmt.Errorf("hex string is empty")
+		return nil, fmt.Errorf("Hex string is empty")
 	}
 	if len(s)%2 != 0 {
-		return nil, fmt.Errorf("hex string must have even length")
+		return nil, fmt.Errorf("Hex string must have even length")
 	}
 	if len(s) > 32 {
-		return nil, fmt.Errorf("hex string too long, %d", len(s))
+		return nil, fmt.Errorf("Hex string too long, %d", len(s))
 	}
 
 	if len(s) < KeySize*2 {
@@ -73,7 +73,7 @@ func KeyHexStringTo16Bytes(s string) ([]byte, error) {
 
 	buf := make([]byte, KeySize)
 	if _, err := hex.Decode(buf, []byte(s)); err != nil {
-		return nil, fmt.Errorf("invalid hex string: %w", err)
+		return nil, fmt.Errorf("Invalid hex string: %w", err)
 	}
 
 	return buf, nil

@@ -65,7 +65,7 @@ func (c *CryptoUIComponents) GetOperation() string {
 
 func (c *CryptoUIComponents) ValidateKey() error {
 	if c.KeyEntry.Text == "" {
-		return fmt.Errorf("please enter a key")
+		return fmt.Errorf("Please enter a key")
 	}
 	return nil
 }
@@ -96,19 +96,19 @@ func ProcessAndSaveFile(inputPath, outputPath, operation string, key []byte, alg
 	case "Encrypt":
 		data, err = algorithms.EncryptFile(inputPath, key, algorithm)
 		if err != nil {
-			return fmt.Errorf("encryption failed: %w", err)
+			return fmt.Errorf("Encryption failed: %w", err)
 		}
 	case "Decrypt":
 		data, err = algorithms.DecryptFile(inputPath, key)
 		if err != nil {
-			return fmt.Errorf("decryption failed: %w", err)
+			return fmt.Errorf("Decryption failed: %w", err)
 		}
 	default:
-		return fmt.Errorf("invalid operation: %s", operation)
+		return fmt.Errorf("Invalid operation: %s", operation)
 	}
 
 	if err := os.WriteFile(outputPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write output file: %w", err)
+		return fmt.Errorf("Failed to write output file: %w", err)
 	}
 
 	logger.Log("%sed %s -> %s (Algorithm: %s)",
@@ -128,19 +128,19 @@ func ProcessAndSaveData(data []byte, outputPath, operation string, key []byte, a
 	case "Encrypt":
 		processedData, err = algorithms.EncryptRawData(data, key, algorithm)
 		if err != nil {
-			return fmt.Errorf("encryption failed: %w", err)
+			return fmt.Errorf("Encryption failed: %w", err)
 		}
 	case "Decrypt":
 		processedData, err = algorithms.DecryptFileData(data, key)
 		if err != nil {
-			return fmt.Errorf("decryption failed: %w", err)
+			return fmt.Errorf("Decryption failed: %w", err)
 		}
 	default:
-		return fmt.Errorf("invalid operation: %s", operation)
+		return fmt.Errorf("Invalid operation: %s", operation)
 	}
 
 	if err := os.WriteFile(outputPath, processedData, 0644); err != nil {
-		return fmt.Errorf("failed to write output file: %w", err)
+		return fmt.Errorf("Failed to write output file: %w", err)
 	}
 
 	logger.Log("%sed data and saved to %s (%d bytes)",

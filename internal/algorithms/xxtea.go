@@ -3,7 +3,7 @@ package algorithms
 import "fmt"
 
 const DELTA = 0x9e3779b9
-const MinDataSize = 16
+const MinDataSize = 8
 const KeySize = 16
 
 func mx(y, z, sum, p, e uint32, key []uint32) uint32 {
@@ -12,26 +12,26 @@ func mx(y, z, sum, p, e uint32, key []uint32) uint32 {
 
 func encryptXXTEA(data []byte, key []byte) ([]byte, error) {
 	if len(data)%4 != 0 {
-		return nil, fmt.Errorf("data length must be multiple of 4 bytes, %d", len(data))
+		return nil, fmt.Errorf("Data length must be multiple of 4 bytes, %d", len(data))
 	}
 	if len(data)/4 < 2 {
-		return nil, fmt.Errorf("data must contain at least two uint32 words, %d", len(data))
+		return nil, fmt.Errorf("Data must contain at least two uint32 words, %d", len(data))
 	}
 	if len(data) < MinDataSize {
-		return nil, fmt.Errorf("invalid data size, %d", len(data))
+		return nil, fmt.Errorf("Invalid data size, %d", len(data))
 	}
 	if len(key) != KeySize {
-		return nil, fmt.Errorf("invalid key size, %d", len(key))
+		return nil, fmt.Errorf("Invalid key size, %d", len(key))
 	}
 
 	v, err := bytesToUint32s(data)
 	if err != nil {
-		return nil, fmt.Errorf("invalid data")
+		return nil, fmt.Errorf("Invalid data")
 	}
 	n := len(v)
 	k, err := bytesToUint32s(key)
 	if err != nil {
-		return nil, fmt.Errorf("invalid key")
+		return nil, fmt.Errorf("Invalid key")
 	}
 
 	var y, z, sum uint32
@@ -54,27 +54,27 @@ func encryptXXTEA(data []byte, key []byte) ([]byte, error) {
 	}
 	result, err := uint32ToBytes(v)
 	if err != nil {
-		return nil, fmt.Errorf("cannot convert encrypted result back to bytes")
+		return nil, fmt.Errorf("Cannot convert encrypted result back to bytes")
 	}
 	return result, nil
 }
 
 func decryptXXTEA(data []byte, key []byte) ([]byte, error) {
 	if len(data) < MinDataSize {
-		return nil, fmt.Errorf("invalid data size")
+		return nil, fmt.Errorf("Invalid data size")
 	}
 	if len(key) != KeySize {
-		return nil, fmt.Errorf("invalid key size")
+		return nil, fmt.Errorf("Invalid key size")
 	}
 
 	v, err := bytesToUint32s(data)
 	if err != nil {
-		return nil, fmt.Errorf("invalid key")
+		return nil, fmt.Errorf("Invalid key")
 	}
 	n := len(v)
 	k, err := bytesToUint32s(key)
 	if err != nil {
-		return nil, fmt.Errorf("invalid key")
+		return nil, fmt.Errorf("Invalid key")
 	}
 
 	var y, z, sum uint32
@@ -96,7 +96,7 @@ func decryptXXTEA(data []byte, key []byte) ([]byte, error) {
 	}
 	result, err := uint32ToBytes(v)
 	if err != nil {
-		return nil, fmt.Errorf("cannot convert encripted result back to bytes")
+		return nil, fmt.Errorf("Cannot convert encripted result back to bytes")
 	}
 	return result, nil
 }

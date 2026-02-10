@@ -5,7 +5,7 @@ import "fmt"
 func encryptRailfence(text []byte, byteKey []byte) ([]byte, error) {
 	key, err := bytesToint(byteKey)
 	if err != nil || key <= 1 {
-		return nil, fmt.Errorf("invalid key")
+		return nil, fmt.Errorf("Invalid key")
 	}
 	if key > len(text) {
 		key = len(text)
@@ -60,7 +60,7 @@ func encryptRailfence(text []byte, byteKey []byte) ([]byte, error) {
 func decryptRailfence(cipher []byte, byteKey []byte) ([]byte, error) {
 	key, err := bytesToint(byteKey)
 	if err != nil {
-		return nil, fmt.Errorf("invalid key size")
+		return nil, fmt.Errorf("Invalid key size")
 	}
 
 	rail := make([][]byte, key)

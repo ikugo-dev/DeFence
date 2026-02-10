@@ -39,15 +39,15 @@ func createSendFileSection(window fyne.Window) fyne.CanvasObject {
 
 	sendBtn := widget.NewButton("Send File", func() {
 		if selectedFile == "" {
-			dialog.ShowError(fmt.Errorf("please select a file to send"), window)
+			dialog.ShowError(fmt.Errorf("Please select a file to send"), window)
 			return
 		}
 		if ipEntry.Text == "" {
-			dialog.ShowError(fmt.Errorf("please enter recipient IP address"), window)
+			dialog.ShowError(fmt.Errorf("Please enter recipient IP address"), window)
 			return
 		}
 		if portEntry.Text == "" {
-			dialog.ShowError(fmt.Errorf("please enter port number"), window)
+			dialog.ShowError(fmt.Errorf("Please enter port number"), window)
 			return
 		}
 		if err := cryptoUI.ValidateKey(); err != nil {
@@ -68,7 +68,7 @@ func createSendFileSection(window fyne.Window) fyne.CanvasObject {
 			if err != nil {
 				fyne.Do(func() {
 					progress.Hide()
-					dialog.ShowError(fmt.Errorf("encryption failed: %s", err), window)
+					dialog.ShowError(fmt.Errorf("Encryption failed: %s", err), window)
 				})
 				return
 			}
@@ -88,7 +88,7 @@ func createSendFileSection(window fyne.Window) fyne.CanvasObject {
 			fyne.Do(func() {
 				progress.Hide()
 				if err != nil {
-					dialog.ShowError(fmt.Errorf("failed to send file: %v", err), window)
+					dialog.ShowError(fmt.Errorf("Failed to send file: %v", err), window)
 					return
 				}
 
