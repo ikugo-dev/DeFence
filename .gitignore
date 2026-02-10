@@ -2,4 +2,5 @@ Projekat.pdf
 a/
 log.txt
 main
-recieved_files/
+received_files/
+*.enc
