@@ -71,7 +71,10 @@ func handleFileEvent(event fsnotify.Event) {
 		return
 	}
 
-	outPath := filepath.Join("./X", filepath.Base(event.Name))
+	outPath := filepath.Join("./X", event.Name)
+	if filepath.Ext(outPath) != ".enc" {
+		outPath += ".enc"
+	}
 	if err := os.WriteFile(outPath, data, 0644); err != nil {
 		logger.Log("Failed to write encrypted file %s: %s", outPath, err)
 	}

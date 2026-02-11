@@ -65,7 +65,7 @@ func DecryptFileData(data []byte, key []byte) ([]byte, error) {
 
 func DecryptRawData(data []byte, key []byte, algorithm string) ([]byte, error) {
 	switch algorithm {
-	case "Railfence":
+	case "Railfence", "RAILFENCE":
 		return decryptRailfence(data, key)
 	case "XXTEA":
 		return decryptXXTEA(data, key)
