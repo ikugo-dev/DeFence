@@ -71,7 +71,7 @@ func handleFileEvent(event fsnotify.Event) {
 		return
 	}
 
-	outPath := filepath.Join("./X", event.Name)
+	outPath := filepath.Join("./X", filepath.Base(event.Name))
 	if filepath.Ext(outPath) != ".enc" {
 		outPath += ".enc"
 	}
